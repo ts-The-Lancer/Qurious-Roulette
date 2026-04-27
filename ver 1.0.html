@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>傀異ルーレット Ver.1.1.22</title>
+    <style>
+        :root { --accent-color: #ff4757; }
+        body {
+            font-family: sans-serif;
+            display: flex; justify-content: center; align-items: flex-start;
+            background-color: #1a1a1a; color: #e0e0e0;
+            margin: 0; padding: 20px; min-height: 100vh;
+            box-sizing: border-box;
+        }
+        
+        .container {
+            background: #2d2d2d; padding: 20px; border-radius: 15px;
+            width: 100%; max-width: 900px;
+            text-align: center; border: 1px solid #444;
+            display: flex; flex-direction: column; gap: 20px;
+            box-sizing: border-box;
+        }
+
+        .header-area {
+            display: flex; justify-content: space-between; align-items: center;
+            width: 100%; border-bottom: 1px solid #444; padding-bottom: 15px;
+        }
+        h1 { font-size: 1.2rem; color: #ffffff; margin: 0; flex-grow: 1; }
+        @media (min-width: 480px) { h1 { font-size: 1.5rem; } }
+
+        .controls { display: flex; gap: 12px; align-items: center; }
+        #colorPicker { border: none; width: 25px; height: 25px; cursor: pointer; background: none; padding: 0; }
+        .icon-btn { background: none; border: none; color: #888; font-size: 1.2rem; cursor: pointer; padding: 5px; transition: 0.2s; }
+        .icon-btn:hover { color: #fff; }
+
+        .main-content {
+            display: flex; flex-direction: column; gap: 20px; width: 100%;
+        }
+
+        @media (min-width: 768px) {
+            .main-content { flex-direction: row; align-items: stretch; }
+            .left-panel { flex: 1.2; }
+            .right-panel { flex: 0.8; display: flex; flex-direction: column; }
+            #history-list { max-height: 450px; }
+        }
+
+        @media (max-width: 767px) {
+            #history-list { max-height: 300px; }
+        }
+
+        .left-panel { width: 100%; box-sizing: border-box; }
+
+        #result-area {
+            background: #1e1e1e; border: 1px solid #444; border-radius: 8px;
+            padding: 20px 10px; margin-bottom: 10px; min-height: 140px;
+            display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 8px;
+        }
+        #result-name { font-size: 1.6rem; font-weight: bold; color: #fff; }
+        .elem-badge {
+            font-size: 0.95rem; color: var(--accent-color);
+            background: rgba(255, 255, 255, 0.05); padding: 4px 15px;
+            border-radius: 20px; border: 1px solid var(--accent-color);
+        }
+
+        .prev-result-box {
+            margin-top: 15px; padding-top: 15px; border-top: 1px dashed #444;
+            width: 90%; display: flex; flex-direction: column; align-items: center; gap: 5px;
+        }
+        .prev-label { font-size: 0.65rem; color: #666; font-weight: bold; }
+        #prev-name { font-size: 1.1rem; color: #aaa; font-weight: bold; }
+        .prev-elem-badge {
+            font-size: 0.7rem; color: #888;
+            background: rgba(255, 255, 255, 0.02); padding: 1px 10px;
+            border-radius: 12px; border: 1px solid #555;
+        }
+
+        .total-counter { font-size: 0.8rem; color: #888; margin: 10px 0 15px 0; }
+        .total-number { color: var(--accent-color); font-weight: bold; font-size: 1rem; }
+
+        .main-btn {
+            background-color: var(--accent-color); border: none; height: 70px;
+            border-radius: 8px; cursor: pointer; width: 100%; margin-bottom: 10px;
+            color: white; font-size: 1.3rem; font-weight: bold; transition: 0.2s;
+            -webkit-appearance: none;
+        }
+        .main-btn:active { filter: brightness(0.8); transform: scale(0.98); }
+
+        #settings-panel {
+            display: none; text-align: left; background: #333; padding: 15px;
+            border-radius: 8px; margin-bottom: 20px;
+        }
+        .item-selector-scroll {
+            max-height: 400px; overflow-y: auto; background: #1a1a1a;
+            padding: 10px; border-radius: 4px; border: 1px solid #444;
+        }
+        .edit-row { padding: 10px 0; border-bottom: 1px solid #2a2a2a; }
+        .edit-row-top { display: flex; align-items: center; gap: 10px; margin-bottom: 5px; }
+        .edit-row-top input[type="text"] {
+            flex-grow: 1; background: #2d2d2d; border: 1px solid #444; color: #fff; padding: 6px; border-radius: 4px;
+        }
+        .element-selector { display: flex; flex-wrap: wrap; gap: 4px; }
+        .elem-btn {
+            background: #333; border: 1px solid #555; color: #aaa;
+            font-size: 0.65rem; padding: 4px 8px; border-radius: 3px; cursor: pointer;
+        }
+        .elem-btn.active { background: var(--accent-color); color: white; border-color: var(--accent-color); }
+
+        .right-panel { width: 100%; text-align: left; box-sizing: border-box; }
+        .history-section {
+            background: #252525; border: 1px solid #444; border-radius: 8px; padding: 15px;
+            height: 100%; display: flex; flex-direction: column; box-sizing: border-box;
+        }
+        .history-title { display: flex; justify-content: space-between; font-size: 0.9rem; margin-bottom: 15px; border-bottom: 2px solid var(--accent-color); padding-bottom: 5px; }
+        
+        #history-list { overflow-y: auto; list-style: none; padding: 0; margin: 0; flex-grow: 1; }
+        #history-list::-webkit-scrollbar { width: 6px; }
+        #history-list::-webkit-scrollbar-thumb { background: #444; border-radius: 3px; }
+
+        .history-item { display: flex; justify-content: space-between; padding: 10px 8px; border-bottom: 1px solid #333; font-size: 0.85rem; align-items: center; }
+        .count-badge { background: var(--accent-color); color: white; padding: 2px 8px; border-radius: 10px; font-weight: bold; }
+        
+        .contact-area { margin-top: 10px; text-align: center; width: 100%; border-top: 1px solid #444; padding-top: 15px; }
+        .sub-link { color: #666; text-decoration: underline; font-size: 0.7rem; cursor: pointer; line-height: 1.4; display: inline-block; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="header-area">
+        <div style="width:25px"></div>
+        <h1>傀異ルーレット</h1>
+        <div class="controls">
+            <input type="color" id="colorPicker" value="#ff4757">
+            <button class="icon-btn" onclick="toggleSettings()" title="設定">⚙️</button>
+        </div>
+    </div>
+
+    <div id="settings-panel">
+        <div style="display:flex; gap:8px; margin-bottom:10px; flex-wrap:wrap;">
+            <button class="mini-btn" style="background:#444;color:#ccc;border:1px solid #555;padding:4px 8px;cursor:pointer;font-size:0.7rem;" onclick="selectAll(true)">全有効</button>
+            <button class="mini-btn" style="background:#444;color:#ccc;border:1px solid #555;padding:4px 8px;cursor:pointer;font-size:0.7rem;" onclick="selectAll(false)">全無効</button>
+            <button class="mini-btn" style="background:#444;color:#ccc;border:1px solid #555;padding:4px 8px;cursor:pointer;font-size:0.7rem;" onclick="addNewItem()">＋項目追加</button>
+        </div>
+        <div class="item-selector-scroll" id="edit-list-container"></div>
+        <button class="main-btn" style="height:40px; margin-top:15px; font-size:0.9rem;" onclick="toggleSettings()">設定を閉じる</button>
+    </div>
+
+    <div class="main-content">
+        <div class="left-panel">
+            <div id="result-area">
+                <div id="result-name">ターゲット</div>
+                <div id="result-element" class="elem-badge" style="visibility: hidden;">おすすめ：-</div>
+                
+                <div class="prev-result-box" id="prev-box" style="visibility: hidden;">
+                    <div class="prev-label">前回のターゲット</div>
+                    <div id="prev-name">-</div>
+                    <div id="prev-element" class="prev-elem-badge">おすすめ：-</div>
+                </div>
+            </div>
+
+            <div class="total-counter">
+                リセット後の合計: <span id="total-count" class="total-number">0</span> 回
+            </div>
+
+            <button class="main-btn" onclick="draw()">ルーレットを回す</button>
+        </div>
+
+        <div class="right-panel">
+            <div class="history-section">
+                <div class="history-title">
+                    <span>討伐記録</span>
+                    <span class="sub-link" onclick="resetAll()">消去</span>
+                </div>
+                <ul id="history-list"></ul>
+            </div>
+        </div>
+    </div>
+
+    <div class="contact-area">
+        <a href="https://x.com/tsTheLancer" target="_blank" rel="noopener noreferrer" class="sub-link">
+            不明な点、追加してほしい要素がございましたら<br>X:@tsTheLancerまでお問い合わせください！
+        </a>
+    </div>
+</div>
+
+<script>
+    (function() {
+        const elementsList = ["火", "水", "雷", "氷", "龍", "毒", "麻痺", "睡眠", "爆破", "なし"];
+        const defaultData = [
+            {name:"オサイズチ", elems:["雷"], enabled:true}, {name:"ドスバギィ", elems:["火"], enabled:true},
+            {name:"クルルヤック", elems:["水"], enabled:true}, {name:"ドスフロギィ", elems:["氷"], enabled:true},
+            {name:"アオアシラ", elems:["火"], enabled:true}, {name:"ウルクスス", elems:["火"], enabled:true},
+            {name:"ラングロトラ", elems:["水"], enabled:true}, {name:"アケノシルム", elems:["水"], enabled:true},
+            {name:"ロアルドロス", elems:["火"], enabled:true}, {name:"ボルボロス", elems:["火"], enabled:true},
+            {name:"ダイミョウザザミ", elems:["雷"], enabled:true}, {name:"フルフル", elems:["火"], enabled:true},
+            {name:"ヨツミワドウ", elems:["雷"], enabled:true}, {name:"ビシュテンゴ", elems:["氷"], enabled:true},
+            {name:"ビシュテンゴ亜種", elems:["水"], enabled:true}, {name:"プケプケ", elems:["雷"], enabled:true},
+            {name:"ジュラトドス", elems:["雷"], enabled:true}, {name:"バサルモス", elems:["龍"], enabled:true},
+            {name:"イソネミクニ", elems:["雷"], enabled:true}, {name:"イソネミクニ亜種", elems:["火"], enabled:true},
+            {name:"リオレイア", elems:["龍"], enabled:true}, {name:"リオレイア希少種", elems:["雷"], enabled:true},
+            {name:"ベリオロス", elems:["火"], enabled:true}, {name:"トビカガチ", elems:["水"], enabled:true},
+            {name:"マガイマガド", elems:["水"], enabled:true}, {name:"マガイマガド(怨嗟)", elems:["水"], enabled:true},
+            {name:"アンジャナフ", elems:["水"], enabled:true}, {name:"ナルガクルガ", elems:["雷"], enabled:true},
+            {name:"タマミツネ", elems:["雷"], enabled:true}, {name:"ゴシャハギ", elems:["火"], enabled:true},
+            {name:"ガランゴルム", elems:["雷"], enabled:true}, {name:"ショウグンギザミ", elems:["雷"], enabled:true},
+            {name:"リオレウス", elems:["龍"], enabled:true}, {name:"リオレウス希少種", elems:["水"], enabled:true},
+            {name:"オロミドロ", elems:["火"], enabled:true}, {name:"オロミドロ亜種", elems:["水"], enabled:true},
+            {name:"ジンオウガ", elems:["氷"], enabled:true}, {name:"ルナガロン", elems:["火"], enabled:true},
+            {name:"ライゼクス", elems:["氷"], enabled:true}, {name:"エスピナス", elems:["氷"], enabled:true},
+            {name:"エスピナス亜種", elems:["水"], enabled:true}, {name:"ゴア・マガラ", elems:["火"], enabled:true},
+            {name:"ゴア・マガラ(混沌)", elems:["龍"], enabled:true}, {name:"セルレギオス", elems:["雷"], enabled:true},
+            {name:"ティガレックス", elems:["雷"], enabled:true}, {name:"ディアブロス", elems:["氷"], enabled:true},
+            {name:"ヤツカダキ", elems:["氷"], enabled:true}, {name:"ヤツカダキ亜種", elems:["水"], enabled:true},
+            {name:"クシャルダオラ", elems:["雷"], enabled:true}, {name:"オオナズチ", elems:["火"], enabled:true},
+            {name:"テオ・テスカトル", elems:["水"], enabled:true}, {name:"シャガルマガラ", elems:["龍"], enabled:true},
+            {name:"ラージャン", elems:["氷"], enabled:true}, {name:"ラージャン(激昂)", elems:["氷"], enabled:true},
+            {name:"バゼルギウス", elems:["雷"], enabled:true}, {name:"バゼルギウス(紅蓮)", elems:["氷"], enabled:true},
+            {name:"バルファルク", elems:["爆破"], enabled:true}
+        ];
+
+        let monsterList = [];
+        let stats = {};
+        let totalDraws = 0;
+        let currentIndex = null;
+        let prevIndex = null;
+
+        function refreshResultDisplay() {
+            if (currentIndex !== null && monsterList[currentIndex]) {
+                const target = monsterList[currentIndex];
+                document.getElementById('result-name').innerText = target.name;
+                document.getElementById('result-element').innerText = "おすすめ：" + target.elems.join(' / ');
+                document.getElementById('result-element').style.visibility = "visible";
+                localStorage.setItem('mhr_currentIndex', currentIndex);
+            }
+            if (prevIndex !== null && monsterList[prevIndex]) {
+                const prevTarget = monsterList[prevIndex];
+                document.getElementById('prev-name').innerText = prevTarget.name;
+                document.getElementById('prev-element').innerText = "おすすめ：" + prevTarget.elems.join(' / ');
+                document.getElementById('prev-box').style.visibility = "visible";
+                localStorage.setItem('mhr_prevIndex', prevIndex);
+            }
+        }
+
+        function updateThemeColor(color) {
+            document.documentElement.style.setProperty('--accent-color', color);
+            const picker = document.getElementById('colorPicker');
+            if(picker) picker.value = color;
+            localStorage.setItem('mhr_theme_color', color);
+        }
+
+        window.toggleSettings = function() {
+            const panel = document.getElementById('settings-panel');
+            if(!panel) return;
+            panel.style.display = (panel.style.display === 'block') ? 'none' : 'block';
+        };
+
+        window.selectAll = function(bool) {
+            monsterList.forEach(m => m.enabled = bool);
+            saveAll(); renderEditList(); updateList();
+        };
+
+        window.addNewItem = function() {
+            monsterList.unshift({name: "新規項目", elems: ["なし"], enabled: true});
+            if(currentIndex !== null) currentIndex++;
+            if(prevIndex !== null) prevIndex++;
+            saveIndices();
+            saveAll(); renderEditList();
+        };
+
+        window.deleteItem = function(idx) {
+            if(confirm("この項目を削除しますか？")) {
+                monsterList.splice(idx, 1);
+                if(currentIndex === idx) currentIndex = null;
+                else if(currentIndex > idx) currentIndex--;
+                if(prevIndex === idx) prevIndex = null;
+                else if(prevIndex > idx) prevIndex--;
+                saveIndices();
+                saveAll(); renderEditList(); updateList();
+                refreshResultDisplay();
+            }
+        };
+
+        function toggleElement(mIdx, el) {
+            let m = monsterList[mIdx];
+            if (el === "なし") { m.elems = ["なし"]; } 
+            else {
+                m.elems = m.elems.filter(e => e !== "なし");
+                if (m.elems.includes(el)) {
+                    m.elems = m.elems.filter(e => e !== el);
+                    if (m.elems.length === 0) m.elems = ["なし"];
+                } else {
+                    if (m.elems.length >= 2) m.elems.shift();
+                    m.elems.push(el);
+                }
+            }
+            saveAll(); renderEditList();
+            refreshResultDisplay();
+        }
+
+        function saveAll() { localStorage.setItem('mhr_v5_items', JSON.stringify(monsterList)); }
+        
+        function saveIndices() {
+            localStorage.setItem('mhr_currentIndex', currentIndex === null ? "" : currentIndex);
+            localStorage.setItem('mhr_prevIndex', prevIndex === null ? "" : prevIndex);
+        }
+
+        function renderEditList() {
+            const container = document.getElementById('edit-list-container');
+            if(!container) return;
+            container.innerHTML = '';
+            monsterList.forEach((m, idx) => {
+                const row = document.createElement('div'); row.className = 'edit-row';
+                const top = document.createElement('div'); top.className = 'edit-row-top';
+                
+                const chk = document.createElement('input'); chk.type = 'checkbox'; chk.checked = m.enabled;
+                chk.onchange = function() { m.enabled = this.checked; saveAll(); updateList(); };
+
+                const txt = document.createElement('input'); txt.type = 'text'; txt.value = m.name;
+                txt.addEventListener('input', function() { 
+                    monsterList[idx].name = this.value; 
+                    saveAll(); updateList(); refreshResultDisplay(); 
+                });
+
+                const del = document.createElement('span'); del.innerHTML = '×';
+                del.style.cssText = 'color:#666; cursor:pointer; padding: 0 10px; font-size:1.2rem;';
+                del.onclick = function() { deleteItem(idx); };
+
+                top.appendChild(chk); top.appendChild(txt); top.appendChild(del);
+
+                const selector = document.createElement('div'); selector.className = 'element-selector';
+                elementsList.forEach(el => {
+                    const btn = document.createElement('button');
+                    btn.className = 'elem-btn' + (m.elems.includes(el) ? ' active' : '');
+                    btn.innerText = el;
+                    btn.onclick = function() { toggleElement(idx, el); };
+                    selector.appendChild(btn);
+                });
+                row.appendChild(top); row.appendChild(selector); container.appendChild(row);
+            });
+        }
+
+        function updateList() {
+            const list = document.getElementById('history-list');
+            if(!list) return;
+            list.innerHTML = '';
+            monsterList.forEach(m => {
+                const fullName = m.name + '（' + m.elems.join(' / ') + '）';
+                if (stats[fullName] > 0) {
+                    const li = document.createElement('li'); li.className = 'history-item';
+                    if(!m.enabled) li.style.opacity = '0.4';
+                    li.innerHTML = '<span>' + fullName + '</span><span class="count-badge">' + stats[fullName] + '</span>';
+                    list.appendChild(li);
+                }
+            });
+            if (list.innerHTML === '') {
+                list.innerHTML = '<li style="color:#666;text-align:center;padding:10px;">記録なし</li>';
+            }
+        }
+
+        window.draw = function() {
+            const poolIndices = [];
+            monsterList.forEach((m, idx) => { if(m.enabled) poolIndices.push(idx); });
+
+            if (poolIndices.length === 0) { alert("有効な項目がありません！"); return; }
+            
+            if (currentIndex !== null) {
+                prevIndex = currentIndex;
+            }
+
+            const randIdx = Math.floor(Math.random() * poolIndices.length);
+            currentIndex = poolIndices[randIdx];
+            
+            const selected = monsterList[currentIndex];
+            const fullName = selected.name + '（' + selected.elems.join(' / ') + '）';
+            
+            stats[fullName] = (stats[fullName] || 0) + 1;
+            totalDraws++;
+            
+            document.getElementById('total-count').innerText = totalDraws;
+            
+            localStorage.setItem('mhr_stats', JSON.stringify(stats));
+            localStorage.setItem('mhr_total_draws', totalDraws);
+            saveIndices();
+            
+            refreshResultDisplay();
+            updateList();
+        };
+
+        window.resetAll = function() {
+            if (confirm("全記録を削除しますか？")) {
+                stats = {}; totalDraws = 0; currentIndex = null; prevIndex = null;
+                localStorage.removeItem('mhr_stats');
+                localStorage.removeItem('mhr_total_draws');
+                localStorage.removeItem('mhr_currentIndex');
+                localStorage.removeItem('mhr_prevIndex');
+                document.getElementById('result-name').innerText = "ターゲット";
+                document.getElementById('result-element').style.visibility = "hidden";
+                document.getElementById('prev-box').style.visibility = "hidden";
+                document.getElementById('total-count').innerText = "0";
+                updateList();
+            }
+        };
+
+        function init() {
+            const savedColor = localStorage.getItem('mhr_theme_color');
+            if (savedColor) updateThemeColor(savedColor);
+            
+            const savedStats = localStorage.getItem('mhr_stats');
+            if (savedStats) stats = JSON.parse(savedStats);
+            const savedTotal = localStorage.getItem('mhr_total_draws');
+            totalDraws = savedTotal ? parseInt(savedTotal) : 0;
+            document.getElementById('total-count').innerText = totalDraws;
+
+            const savedItems = localStorage.getItem('mhr_v5_items');
+            monsterList = savedItems ? JSON.parse(savedItems) : defaultData;
+
+            // 最後に選択していたインデックスを復元
+            const sCur = localStorage.getItem('mhr_currentIndex');
+            const sPrev = localStorage.getItem('mhr_prevIndex');
+            currentIndex = (sCur !== null && sCur !== "") ? parseInt(sCur) : null;
+            prevIndex = (sPrev !== null && sPrev !== "") ? parseInt(sPrev) : null;
+
+            const picker = document.getElementById('colorPicker');
+            if(picker) picker.addEventListener('input', (e) => updateThemeColor(e.target.value));
+            
+            renderEditList();
+            updateList();
+            refreshResultDisplay(); // 保存データの表示
+        }
+
+        init();
+    })();
+</script>
+
+</body>
+</html>
