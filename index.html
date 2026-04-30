@@ -28,6 +28,14 @@
         .prev-name { font-size: 1.2rem; font-weight: bold; color: #999; }
         .main-btn { background-color: var(--accent-color); border: none; height: 65px; border-radius: 10px; cursor: pointer; width: 100%; color: white; font-size: 1.2rem; font-weight: bold; margin-top: 10px; }
         
+        /* お問い合わせボタンのスタイル */
+        .contact-btn { 
+            display: block; width: 100%; margin-top: 10px; padding: 10px;
+            background: #222; color: #aaa; border: 1px solid #444; border-radius: 8px;
+            font-size: 0.75rem; text-decoration: none; cursor: pointer; transition: 0.2s;
+        }
+        .contact-btn:hover { background: #333; color: #fff; border-color: #666; }
+
         .reset-btn { background: #444; border: 1px solid #555; color: #ccc; font-size: 0.65rem; padding: 3px 8px; border-radius: 4px; cursor: pointer; transition: 0.2s; }
         .reset-btn:hover { background: #555; color: #fff; }
 
@@ -120,8 +128,15 @@
                 </div>
             </div>
             <p style="font-size:0.8rem; color:#888; margin: 15px 0;">合計討伐: <span id="total-count">0</span></p>
+            
             <button class="main-btn" onclick="draw()">ルーレットを回す</button>
+            
+            <!-- 追加されたお問い合わせボタン -->
+            <a href="https://x.com/tsTheLancer" target="_blank" rel="noopener noreferrer" class="contact-btn">
+                不具合報告はX:@tsTheLancerまで
+            </a>
         </div>
+        
         <div class="right-panel">
             <div class="right-panel-box">
                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; border-bottom:1px solid var(--accent-color); padding-bottom:5px;">
@@ -135,7 +150,6 @@
 </div>
 
 <script>
-// (スクリプト部分は前回のVer.1.12から変更ありません)
 const elementsList = ["火", "水", "雷", "氷", "龍", "毒", "麻痺", "睡眠", "爆破", "なし"];
 const defaultData = [
     {ex:"1", name:"オサイズチ", elems:["雷"], enabled:true}, {ex:"1", name:"ドスバギィ", elems:["火"], enabled:true}, {ex:"1", name:"クルルヤック", elems:["水"], enabled:true}, {ex:"1", name:"ドスフロギィ", elems:["氷"], enabled:true}, {ex:"1", name:"アオアシラ", elems:["火"], enabled:true}, {ex:"1", name:"ウルクスス", elems:["火"], enabled:true}, {ex:"1", name:"ラングロトラ", elems:["水"], enabled:true}, {ex:"2", name:"アケノシルム", elems:["水"], enabled:true}, {ex:"2", name:"ロアルドロス", elems:["火"], enabled:true}, {ex:"2", name:"ボルボロス", elems:["火"], enabled:true}, {ex:"2", name:"ダイミョウザザミ", elems:["雷"], enabled:true}, {ex:"2", name:"フルフル", elems:["火"], enabled:true}, {ex:"2", name:"ヨツミワドウ", elems:["雷"], enabled:true}, {ex:"2", name:"ビシュテンゴ", elems:["氷"], enabled:true}, {ex:"3", name:"ビシュテンゴ亜種", elems:["水"], enabled:true}, {ex:"3", name:"プケプケ", elems:["雷"], enabled:true}, {ex:"3", name:"ジュラトドス", elems:["爆破"], enabled:true}, {ex:"2", name:"バサルモス", elems:["龍"], enabled:true}, {ex:"3", name:"イソネミクニ", elems:["雷"], enabled:true}, {ex:"4", name:"イソネミクニ亜種", elems:["火"], enabled:true}, {ex:"3", name:"リオレイア", elems:["龍"], enabled:true}, {ex:"7", name:"リオレイア希少種", elems:["雷"], enabled:true}, {ex:"4", name:"ベリオロス", elems:["火"], enabled:true}, {ex:"3", name:"トビカガチ", elems:["水"], enabled:true}, {ex:"4", name:"マガイマガド", elems:["水"], enabled:true}, {ex:"7", name:"マガイマガド(怨嗟)", elems:["水"], enabled:true}, {ex:"3", name:"アンジャナフ", elems:["水"], enabled:true}, {ex:"4", name:"ナルガクルガ", elems:["雷"], enabled:true}, {ex:"5", name:"タマミツネ", elems:["雷"], enabled:true}, {ex:"4", name:"ゴシャハギ", elems:["火"], enabled:true}, {ex:"4", name:"ガランゴルム", elems:["雷"], enabled:true}, {ex:"3", name:"ショウグンギザミ", elems:["雷"], enabled:true}, {ex:"5", name:"リオレウス", elems:["龍"], enabled:true}, {ex:"7", name:"リオレウス希少種", elems:["水"], enabled:true}, {ex:"4", name:"オロミドロ", elems:["火"], enabled:true}, {ex:"5", name:"オロミドロ亜種", elems:["水"], enabled:true}, {ex:"5", name:"ジンオウガ", elems:["氷"], enabled:true}, {ex:"5", name:"ルナガロン", elems:["火"], enabled:true}, {ex:"5", name:"ライゼクス", elems:["爆破"], enabled:true}, {ex:"6", name:"エスピナス", elems:["氷"], enabled:true}, {ex:"7", name:"エスピナス亜種", elems:["水"], enabled:true}, {ex:"6", name:"ゴア・マガラ", elems:["火"], enabled:true}, {ex:"8", name:"ゴア・マガラ(混沌)", elems:["龍"], enabled:true}, {ex:"5", name:"セルレギオス", elems:["雷"], enabled:true}, {ex:"5", name:"ティガレックス", elems:["雷"], enabled:true}, {ex:"5", name:"ディアブロス", elems:["氷"], enabled:true}, {ex:"4", name:"ヤツカダキ", elems:["氷"], enabled:true}, {ex:"6", name:"ヤツカダキ亜種", elems:["水"], enabled:true}, {ex:"8", name:"クシャルダオラ", elems:["雷"], enabled:true}, {ex:"8", name:"オオナズチ", elems:["火"], enabled:true}, {ex:"8", name:"テオ・テスカトル", elems:["水"], enabled:true}, {ex:"9", name:"シャガルマガラ", elems:["龍"], enabled:true}, {ex:"6", name:"ラージャン", elems:["氷"], enabled:true}, {ex:"7", name:"ラージャン(激昂)", elems:["氷"], enabled:true}, {ex:"6", name:"バゼルギウス", elems:["雷"], enabled:true}, {ex:"7", name:"バゼルギウス(紅蓮)", elems:["氷"], enabled:true}, {ex:"9", name:"バルファルク", elems:["爆破"], enabled:true}
