@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>傀異ルーレット Ver. 1.14</title>
+    <title>傀異ルーレット Ver. 1.14.1</title>
     <style>
         :root { --accent-color: #ff4757; }
         body {
@@ -32,7 +32,10 @@
         .index-btn { background: #444; border: 1px solid #555; color: #ccc; font-size: 0.75rem; padding: 6px 0; border-radius: 4px; cursor: pointer; }
         .index-btn.active { background: var(--accent-color); color: #fff; border-color: var(--accent-color); }
         
-        .item-scroll { max-height: 350px; overflow-y: auto; background: #1a1a1a; padding: 10px; border-radius: 6px; border: 1px solid #444; margin-bottom: 10px; }
+        .bulk-actions { display: flex; gap: 5px; margin-bottom: 10px; flex-wrap: wrap; }
+        .bulk-btn { border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 0.75rem; color: white; }
+
+        .item-scroll { max-height: 300px; overflow-y: auto; background: #1a1a1a; padding: 10px; border-radius: 6px; border: 1px solid #444; margin-bottom: 10px; }
         .edit-row { padding: 10px 8px; border-bottom: 1px solid #2a2a2a; transition: 0.2s; }
         .edit-row.disabled { opacity: 0.5; }
         
@@ -52,16 +55,16 @@
 <div class="container">
     <div class="header-area">
         <div style="width:25px"></div>
-        <h1>傀異ルーレット Ver. 1.14</h1>
+        <h1>傀異ルーレット Ver. 1.14.1</h1>
         <button onclick="toggleSettings()" style="background:none; border:none; color:#aaa; cursor:pointer; font-size:1.4rem;">⚙️</button>
     </div>
 
     <div id="settings-panel">
         <div class="search-container">
-            <div class="search-label">EXレベル検索</div>
+            <div class="search-label">① EXレベル選択 (一括操作の対象)</div>
             <div class="index-grid ex-grid" id="ex-index"></div>
             
-            <div class="search-label">頭文字検索（五十音順ソート）</div>
+            <div class="search-label">② 頭文字検索 (五十音順ソート)</div>
             <div class="index-grid kana-grid" id="kana-index"></div>
 
             <div style="display:flex; gap:5px;">
@@ -70,10 +73,13 @@
             </div>
         </div>
 
-        <div style="display:flex; gap:5px; margin-bottom:10px;">
-            <button onclick="addNewItem()" style="background:#444; color:white; border:none; padding:6px 12px; border-radius:4px; cursor:pointer; font-size:0.75rem;">＋追加</button>
-            <button onclick="selectAll(true)" style="background:#2ecc71; color:white; border:none; padding:6px 12px; border-radius:4px; cursor:pointer; font-size:0.75rem;">表示分を有効</button>
-            <button onclick="selectAll(false)" style="background:#e74c3c; color:white; border:none; padding:6px 12px; border-radius:4px; cursor:pointer; font-size:0.75rem;">表示分を無効</button>
+        <div class="bulk-actions">
+            <div style="width:100%; font-size:0.7rem; color:#888; margin-bottom:5px;">一括操作:</div>
+            <button onclick="bulkEx(true)" class="bulk-btn" style="background:#3498db;" id="btn-ex-on">全EXを全て有効</button>
+            <button onclick="bulkEx(false)" class="bulk-btn" style="background:#e67e22;" id="btn-ex-off">全EXを全て無効</button>
+            <button onclick="selectAll(true)" class="bulk-btn" style="background:#2ecc71;">表示中を全て有効</button>
+            <button onclick="selectAll(false)" class="bulk-btn" style="background:#e74c3c;">表示中を全て無効</button>
+            <button onclick="addNewItem()" class="bulk-btn" style="background:#444;">＋新規追加</button>
         </div>
         
         <div id="edit-list-container" class="item-scroll"></div>
@@ -139,7 +145,7 @@ function renderIndices() {
         const btn = document.createElement('button');
         btn.className = 'index-btn' + (state.searchLevel == i ? ' active' : '');
         btn.innerText = 'EX' + i;
-        btn.onclick = () => { state.searchLevel = (state.searchLevel == i) ? null : i; renderIndices(); renderSettings(); };
+        btn.onclick = () => { state.searchLevel = (state.searchLevel == i) ? null : i; updateBulkLabel(); renderIndices(); renderSettings(); };
         exBox.appendChild(btn);
     }
     const kanaBox = document.getElementById('kana-index');
@@ -151,6 +157,22 @@ function renderIndices() {
         btn.onclick = () => { state.searchKana = (state.searchKana == g.label) ? null : g.label; renderIndices(); renderSettings(); };
         kanaBox.appendChild(btn);
     });
+    updateBulkLabel();
+}
+
+function updateBulkLabel() {
+    const onBtn = document.getElementById('btn-ex-on');
+    const offBtn = document.getElementById('btn-ex-off');
+    const label = state.searchLevel ? `EX${state.searchLevel}` : "全EX";
+    onBtn.innerText = `${label}を全て有効`;
+    offBtn.innerText = `${label}を全て無効`;
+}
+
+function bulkEx(v) {
+    state.monsters.forEach(m => {
+        if(!state.searchLevel || m.ex == state.searchLevel) m.enabled = v;
+    });
+    save(); renderSettings();
 }
 
 function resetSearch() {
@@ -222,13 +244,10 @@ function refresh() {
         document.getElementById('res-elem').innerText = "おすすめ：" + cur.elems[0];
         document.getElementById('res-elem').style.visibility = "visible";
     }
-    
-    // 合計回数計算
     const total = Object.values(state.stats).reduce((a, b) => a + b, 0);
     document.getElementById('total-count').innerText = total;
     document.getElementById('active-count').innerText = state.monsters.filter(m => m.enabled).length;
     document.getElementById('total-monsters').innerText = state.monsters.length;
-    
     const list = document.getElementById('history-list'); list.innerHTML = "";
     state.monsters.forEach((m, i) => {
         if(state.stats[i] > 0) {
