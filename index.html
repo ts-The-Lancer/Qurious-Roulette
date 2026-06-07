@@ -60,6 +60,9 @@
 
         /* メモ帳タブ用スタイル */
         .notepad-area { text-align: left; display: flex; flex-direction: column; gap: 10px; }
+        .notepad-toolbar { display: flex; gap: 8px; background: #252525; padding: 8px 12px; border-radius: 6px; border: 1px solid #444; }
+        .tool-btn { background: #444; border: 1px solid #555; color: #fff; font-size: 0.75rem; padding: 4px 10px; border-radius: 4px; cursor: pointer; transition: 0.2s; }
+        .tool-btn:hover { background: #555; border-color: var(--accent-color); }
         .notepad-textarea { width: 100%; height: 450px; background: #1a1a1a; color: #e0e0e0; border: 1px solid #444; border-radius: 10px; padding: 15px; box-sizing: border-box; font-family: monospace; font-size: 0.95rem; line-height: 1.5; resize: vertical; outline: none; }
         .notepad-textarea:focus { border-color: var(--accent-color); }
         .notepad-footer { display: flex; justify-content: space-between; align-items: center; font-size: 0.8rem; color: #888; }
@@ -141,6 +144,10 @@
 
     <div id="tab-notepad" class="tab-content">
         <div class="notepad-area">
+            <div class="notepad-toolbar">
+                <button class="tool-btn" onclick="insertUnderline('divider')">➖ 区切り線 (---)</button>
+                <button class="tool-btn" onclick="insertUnderline('border')">＿＿ 下線枠 (＿＿)</button>
+            </div>
             <textarea id="notepad-core" class="notepad-textarea" placeholder="ここに装備構成、討伐のコツ、周回メモ、目標タスクなどをがっつり書き込めます..." oninput="saveNote()"></textarea>
             <div class="notepad-footer">
                 <span id="note-char-count">0 文字</span>
@@ -208,6 +215,26 @@ function clearNote() {
         localStorage.setItem('MHR_V16_NOTE', "");
         updateCharCount();
     }
+}
+
+// 下線・区切り線挿入
+function insertUnderline(type) {
+    const tx = document.getElementById('notepad-core');
+    const start = tx.selectionStart;
+    const end = tx.selectionEnd;
+    const currentText = tx.value;
+    
+    let insertStr = "";
+    if (type === 'divider') {
+        insertStr = "\n----------------------------\n";
+    } else if (type === 'border') {
+        insertStr = "＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿";
+    }
+
+    tx.value = currentText.substring(0, start) + insertStr + currentText.substring(end);
+    tx.focus();
+    tx.selectionStart = tx.selectionEnd = start + insertStr.length;
+    saveNote();
 }
 
 // ルーレットインデックス処理
