@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>傀異ルーレット Ver. 1.16</title>
+    <title>傀異ルーレット Ver. 1.16.1</title>
     <style>
         :root { --accent-color: #ff4757; --bg-dark: #1a1a1a; --panel-bg: #2d2d2d; }
         body {
@@ -73,15 +73,17 @@
 <div class="container">
     <div class="header-area">
         <div style="width:25px"></div>
-        <h1>傀異ルーレット Ver. 1.16</h1>
+        <h1>傀異ルーレット Ver. 1.16.1</h1>
         <button onclick="toggleSettings()" style="background:none; border:none; color:#aaa; cursor:pointer; font-size:1.4rem;">⚙️</button>
     </div>
 
+    <!-- タブ切り替えボタン -->
     <div class="tab-container">
         <button class="tab-btn active" id="tab-roulette-btn" onclick="switchTab('roulette')">🎯 ルーレット</button>
         <button class="tab-btn" id="tab-notepad-btn" onclick="switchTab('notepad')">📝 攻略メモ帳</button>
     </div>
 
+    <!-- 設定パネル（ルーレットタブ用） -->
     <div id="settings-panel">
         <div class="search-container">
             <div class="search-label">① EXレベル選択 (一括操作の対象)</div>
@@ -109,6 +111,7 @@
         <button class="main-btn" style="height:40px; font-size:0.9rem;" onclick="toggleSettings()">保存して戻る</button>
     </div>
 
+    <!-- タブ1: ルーレットコンテンツ -->
     <div id="tab-roulette" class="tab-content active">
         <div class="main-content">
             <div class="left-panel">
@@ -142,6 +145,7 @@
         </div>
     </div>
 
+    <!-- タブ2: メモ帳コンテンツ -->
     <div id="tab-notepad" class="tab-content">
         <div class="notepad-area">
             <div class="notepad-toolbar">
@@ -169,6 +173,7 @@ const defaultData = [
 ];
 
 let state = {
+    // 過去データの上書き対策も考慮しつつ読み込み
     monsters: JSON.parse(localStorage.getItem('MHR_V15_DATA')) || defaultData,
     stats: JSON.parse(localStorage.getItem('MHR_V15_STATS')) || {},
     note: localStorage.getItem('MHR_V16_NOTE') || "",
@@ -296,6 +301,36 @@ function getFiltered() {
     return list;
 }
 
+// 属性セレクトのロジック（最大2つまでトグル可能）
+function toggleElementSelection(monsterIndex, targetElem) {
+    let currentElems = state.monsters[monsterIndex].elems || [];
+    
+    // 「なし」を選択した場合、あるいは配列が壊れていた場合はリセット
+    if (targetElem === "なし") {
+        state.monsters[monsterIndex].elems = ["なし"];
+        save(); renderSettings();
+        return;
+    }
+
+    // 「なし」を配列から除去
+    currentElems = currentElems.filter(e => e !== "なし");
+
+    if (currentElems.includes(targetElem)) {
+        // すでに選ばれているなら解除
+        currentElems = currentElems.filter(e => e !== targetElem);
+        if (currentElems.length === 0) currentElems = ["なし"];
+    } else {
+        // 新しく追加（すでに2つ選ばれているなら一番古いものを1つ押し出す）
+        if (currentElems.length >= 2) {
+            currentElems.shift();
+        }
+        currentElems.push(targetElem);
+    }
+
+    state.monsters[monsterIndex].elems = currentElems;
+    save(); renderSettings();
+}
+
 function renderSettings() {
     const container = document.getElementById('edit-list-container');
     container.innerHTML = "";
@@ -311,11 +346,13 @@ function renderSettings() {
             <div style="display:flex; gap:3px; margin-top:5px; margin-left:36px;" id="el-${m.oid}"></div>
         `;
         const sel = div.querySelector(`#el-${m.oid}`);
+        const currentSelected = m.elems || ["なし"];
+        
         elementsList.forEach(e => {
             const btn = document.createElement('button');
-            btn.className = 'elem-btn' + (m.elems.includes(e) ? ' active' : '');
+            btn.className = 'elem-btn' + (currentSelected.includes(e) ? ' active' : '');
             btn.innerText = e;
-            btn.onclick = () => { state.monsters[m.oid].elems = [e]; save(); renderSettings(); };
+            btn.onclick = () => { toggleElementSelection(m.oid, e); };
             sel.appendChild(btn);
         });
         container.appendChild(div);
@@ -335,13 +372,19 @@ function toggleSettings() {
     else { renderIndices(); renderSettings(); p.style.display = 'block'; }
 }
 
+// 属性表示文字列のフォーマットユーティリティ
+function formatElements(elems) {
+    if (!elems || elems.length === 0) return "なし";
+    return elems.join(" / ");
+}
+
 function refresh() {
     const cur = state.monsters[state.curIdx];
     if(cur) {
         document.getElementById('res-name').innerText = cur.name;
         document.getElementById('res-ex').innerText = 'EX' + cur.ex;
         document.getElementById('res-ex').style.visibility = "visible";
-        document.getElementById('res-elem').innerText = "おすすめ：" + cur.elems[0];
+        document.getElementById('res-elem').innerText = "おすすめ：" + formatElements(cur.elems);
         document.getElementById('res-elem').style.visibility = "visible";
     }
 
@@ -349,7 +392,7 @@ function refresh() {
     if(last && state.curIdx !== state.lastIdx) { 
         document.getElementById('last-res-box').style.visibility = "visible";
         document.getElementById('last-name').innerText = last.name;
-        document.getElementById('last-elem').innerText = `(${last.elems[0]})`;
+        document.getElementById('last-elem').innerText = `(${formatElements(last.elems)})`;
     }
 
     const total = Object.values(state.stats).reduce((a, b) => a + b, 0);
@@ -362,7 +405,7 @@ function refresh() {
         if(state.stats[i] > 0) {
             const li = document.createElement('li'); 
             li.style.cssText = "display:flex; justify-content:space-between; padding:5px; border-bottom:1px solid #333; font-size:0.8rem;";
-            li.innerHTML = `<span>${m.name} <small style="color:#666;">(EX${m.ex})</small></span><span>${state.stats[i]}体</span>`;
+            li.innerHTML = `<span>${m.name} <small style="color:#888;">(${formatElements(m.elems)})</small> <small style="color:#666;">[EX${m.ex}]</small></span><span>${state.stats[i]}体</span>`;
             list.appendChild(li);
         }
     });
