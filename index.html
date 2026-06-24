@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>傀異ルーレット Ver. 1.16.5</title>
+    <title>傀異ルーレット Ver. 1.17</title>
     <style>
         :root { --accent-color: #ff4757; --bg-dark: #1a1a1a; --panel-bg: #2d2d2d; }
         body {
@@ -30,6 +30,14 @@
         @media (min-width: 768px) { .main-content { flex-direction: row; } .left-panel { flex: 1.2; } .right-panel { flex: 0.8; } }
         
         #settings-panel { display: none; text-align: left; background: #333; padding: 15px; border-radius: 10px; border: 1px solid #555; margin-bottom: 15px; }
+        
+        /* プリセット機能のスタイル */
+        .preset-container { background: #222; border: 1px solid #555; padding: 12px; border-radius: 8px; margin-bottom: 12px; }
+        .preset-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; background: #2d2d2d; padding: 6px 10px; border-radius: 5px; margin-bottom: 5px; border: 1px solid #444; }
+        .preset-name { font-size: 0.85rem; color: #fff; font-weight: bold; flex-grow: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .preset-empty { font-size: 0.8rem; color: #777; font-style: italic; }
+        .preset-action-btn { font-size: 0.7rem; padding: 4px 8px; border: none; border-radius: 3px; cursor: pointer; color: white; transition: 0.2s; }
+
         .search-container { background: #252525; padding: 12px; border-radius: 8px; border: 1px solid #444; margin-bottom: 10px; }
         .search-label { font-size: 0.7rem; color: #888; margin-bottom: 5px; font-weight: bold; }
         
@@ -75,7 +83,7 @@
 <div class="container">
     <div class="header-area">
         <div style="width:25px"></div>
-        <h1>傀異ルーレット Ver. 1.16.5</h1>
+        <h1>傀異ルーレット Ver. 1.17</h1>
         <button onclick="toggleSettings()" style="background:none; border:none; color:#aaa; cursor:pointer; font-size:1.4rem;">⚙️</button>
     </div>
 
@@ -87,6 +95,12 @@
 
     <!-- 設定パネル（ルーレットタブ用） -->
     <div id="settings-panel">
+        <!-- プリセット管理エリア -->
+        <div class="preset-container">
+            <div class="search-label" style="margin-bottom:8px; color:var(--accent-color);">💾 ルーレット構成プリセット (最大5つ)</div>
+            <div id="presets-list-area"></div>
+        </div>
+
         <div class="search-container">
             <div class="search-label">① EXレベル選択 (一括操作の対象)</div>
             <div class="index-grid ex-grid" id="ex-index"></div>
@@ -178,6 +192,7 @@ let state = {
     monsters: JSON.parse(localStorage.getItem('MHR_V15_DATA')) || defaultData,
     stats: JSON.parse(localStorage.getItem('MHR_V15_STATS')) || {},
     note: localStorage.getItem('MHR_V16_NOTE') || "",
+    presets: JSON.parse(localStorage.getItem('MHR_V17_PRESETS')) || [null, null, null, null, null], // 5スロット固定
     curIdx: null,
     lastIdx: null, 
     searchLevel: null,
@@ -187,6 +202,7 @@ let state = {
 function save() {
     localStorage.setItem('MHR_V15_DATA', JSON.stringify(state.monsters));
     localStorage.setItem('MHR_V15_STATS', JSON.stringify(state.stats));
+    localStorage.setItem('MHR_V17_PRESETS', JSON.stringify(state.presets));
 }
 
 // タブ切り替え制御
@@ -243,6 +259,82 @@ function insertUnderline(type) {
     saveNote();
 }
 
+// プリセットUIの生成・更新
+function renderPresets() {
+    const area = document.getElementById('presets-list-area');
+    area.innerHTML = "";
+    
+    state.presets.forEach((p, i) => {
+        const row = document.createElement('div');
+        row.className = 'preset-row';
+        
+        if (p) {
+            row.innerHTML = `
+                <div class="preset-name">スロット${i+1}: ${p.name} <small style="color:#888; font-weight:normal;">(${p.data.filter(m=>m.enabled).length}体有効)</small></div>
+                <div style="display:flex; gap:3px;">
+                    <button class="preset-action-btn" style="background:#2ecc71;" onclick="loadPreset(${i})">読込</button>
+                    <button class="preset-action-btn" style="background:#e67e22;" onclick="savePreset(${i}, true)">上書</button>
+                    <button class="preset-action-btn" style="background:#e74c3c; padding:4px 6px;" onclick="deletePreset(${i})">❌</button>
+                </div>
+            `;
+        } else {
+            row.innerHTML = `
+                <div class="preset-name preset-empty">スロット${i+1}: 未登録</div>
+                <button class="preset-action-btn" style="background:#3498db;" onclick="savePreset(${i}, false)">現在の設定を保存</button>
+            `;
+        }
+        area.appendChild(row);
+    });
+}
+
+// プリセット保存
+function savePreset(slotIdx, isOverwrite) {
+    let pName = "マイセット";
+    if (isOverwrite) {
+        if (!confirm(`スロット${slotIdx+1} のプリセットを現在の設定で上書きしますか？`)) return;
+        pName = state.presets[slotIdx].name;
+    } else {
+        const input = prompt(`プリセット${slotIdx+1} の名前を入力してください:`, `構成セット ${slotIdx+1}`);
+        if (input === null) return;
+        if (input.trim() !== "") pName = input.trim();
+    }
+    
+    // 現在のモンスターリスト構成をディープコピーして保存
+    state.presets[slotIdx] = {
+        name: pName,
+        data: JSON.parse(JSON.stringify(state.monsters))
+    };
+    
+    save();
+    renderPresets();
+}
+
+// プリセット読み込み
+function loadPreset(slotIdx) {
+    const p = state.presets[slotIdx];
+    if (!p) return;
+    
+    if (confirm(`プリセット「${p.name}」を読み込みますか？\n(現在のルーレット設定は上書きされます)`)) {
+        state.monsters = JSON.parse(JSON.stringify(p.data));
+        state.curIdx = null;
+        state.lastIdx = null;
+        
+        save();
+        renderSettings();
+        renderPresets();
+        alert(`プリセット「${p.name}」を適用しました。`);
+    }
+}
+
+// プリセット削除
+function deletePreset(slotIdx) {
+    if (confirm(`スロット${slotIdx+1} のプリセットを削除しますか？`)) {
+        state.presets[slotIdx] = null;
+        save();
+        renderPresets();
+    }
+}
+
 // ルーレットインデックス処理
 function renderIndices() {
     const exBox = document.getElementById('ex-index');
@@ -278,7 +370,7 @@ function bulkEx(v) {
     state.monsters.forEach(m => {
         if(!state.searchLevel || m.ex == state.searchLevel) m.enabled = v;
     });
-    save(); renderSettings();
+    save(); renderSettings(); renderPresets();
 }
 
 function resetSearch() {
@@ -371,20 +463,15 @@ function addNewItem() {
     renderSettings(); 
 }
 
-// 既存項目の削除ロジック
 function deleteItem(index, name) {
     if (confirm(`「${name}」をリストから削除しますか？\n(この操作は取り消せません)`)) {
-        // 現在選択中のインデックスや前回値がズレないようリセット
         state.curIdx = null;
         state.lastIdx = null;
         
-        // 討伐統計データからも該当キーを削除・詰めるために統計もリセット処理が安全ですが、
-        // ここではズレを防ぐため、対象モンスターに紐づくスタッツを消去します
         if (state.stats[index] !== undefined) {
             delete state.stats[index];
         }
         
-        // 統計オブジェクトのキーをインデックス変更に合わせて調整
         let newStats = {};
         Object.keys(state.stats).forEach(k => {
             let ki = parseInt(k);
@@ -395,8 +482,6 @@ function deleteItem(index, name) {
             }
         });
         state.stats = newStats;
-
-        // リストから削除
         state.monsters.splice(index, 1);
         
         save();
@@ -407,7 +492,7 @@ function deleteItem(index, name) {
 function toggleSettings() {
     const p = document.getElementById('settings-panel');
     if(p.style.display === 'block') { p.style.display = 'none'; refresh(); }
-    else { renderIndices(); renderSettings(); p.style.display = 'block'; }
+    else { renderIndices(); renderSettings(); renderPresets(); p.style.display = 'block'; }
 }
 
 function formatElements(elems) {
