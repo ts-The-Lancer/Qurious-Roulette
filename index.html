@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>傀異ルーレット Ver. 1.18</title>
+    <title>傀異ルーレット Ver. 1.18.1</title>
     <style>
         :root { --accent-color: #ff4757; --bg-dark: #1a1a1a; --panel-bg: #2d2d2d; }
         body {
@@ -51,10 +51,23 @@
         .bulk-actions { display: flex; gap: 5px; margin-bottom: 10px; flex-wrap: wrap; }
         .bulk-btn { border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 0.75rem; color: white; }
 
-        .item-scroll { max-height: 350px; overflow-y: auto; background: #1a1a1a; padding: 10px; border-radius: 6px; border: 1px solid #444; margin-bottom: 10px; }
-        .edit-row { padding: 10px 8px; border-bottom: 1px solid #2a2a2a; transition: 0.2s; }
+        .item-scroll { max-height: 380px; overflow-y: auto; background: #1a1a1a; padding: 10px; border-radius: 6px; border: 1px solid #444; margin-bottom: 10px; }
+        
+        /* 編集用行アイテム */
+        .edit-row { 
+            padding: 8px; border-bottom: 1px solid #2a2a2a; transition: background-color 0.2s; 
+            background: #222; border-radius: 6px; margin-bottom: 6px; border: 1px solid #333;
+        }
+        .edit-row.dragging { opacity: 0.4; background: #444; }
         .edit-row.disabled { opacity: 0.5; }
         
+        .drag-handle { cursor: grab; color: #888; font-size: 1.1rem; padding: 0 4px; user-select: none; touch-action: none; }
+        .drag-handle:active { cursor: grabbing; color: var(--accent-color); }
+        
+        .move-btn { background: #333; border: 1px solid #555; color: #ccc; font-size: 0.65rem; padding: 2px 5px; border-radius: 3px; cursor: pointer; }
+        .move-btn:hover { background: #555; color: #fff; }
+        .move-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+
         .input-text { background: transparent; border: none; border-bottom: 1px solid #444; color: #fff; padding: 4px; flex-grow: 1; font-size: 0.9rem; }
         .elem-btn { background: #333; border: 1px solid #555; color: #888; font-size: 0.65rem; padding: 2px 5px; border-radius: 3px; cursor: pointer; }
         .elem-btn.active { background: var(--accent-color); color: white; }
@@ -96,7 +109,7 @@
 <div class="container">
     <div class="header-area">
         <div style="width:25px"></div>
-        <h1>傀異ルーレット Ver. 1.18</h1>
+        <h1>傀異ルーレット Ver. 1.18.1</h1>
         <button onclick="toggleSettings()" style="background:none; border:none; color:#aaa; cursor:pointer; font-size:1.4rem;">⚙️</button>
     </div>
 
@@ -116,7 +129,7 @@
                 <button class="bulk-btn" style="background:#3498db; flex:1;" onclick="document.getElementById('import-file-input').click()">📁 ファイルから復元</button>
                 <input type="file" id="import-file-input" accept=".json" style="display:none;" onchange="importData(event)">
             </div>
-            <div style="font-size:0.7rem; color:#aaa; margin-top:6px;">※Chromeの履歴を消去する前に「保存」しておくと、消去後も「復元」で元の状態に戻せます（モンスター設定・討伐記録・メモ帳・プリセットが対象）。</div>
+            <div style="font-size:0.7rem; color:#aaa; margin-top:6px;">※Chromeの履歴を消去する前に「保存」しておくと、消去後も「復元」で元の状態に戻せます。</div>
         </div>
 
         <!-- プリセット管理エリア -->
@@ -129,7 +142,7 @@
             <div class="search-label">① EXレベル選択 (一括操作の対象)</div>
             <div class="index-grid ex-grid" id="ex-index"></div>
             
-            <div class="search-label">② 頭文字検索 (五十音順ソート)</div>
+            <div class="search-label">② 頭文字検索 (絞り込み)</div>
             <div class="index-grid kana-grid" id="kana-index"></div>
 
             <div style="display:flex; gap:5px;">
@@ -147,12 +160,21 @@
             <button onclick="addNewItem()" class="bulk-btn" style="background:#444;">＋新規追加</button>
         </div>
         
-        <!-- モンスター編集＆現在の討伐数編集 -->
+        <!-- モンスター編集＆並び順変更＆現在の討伐数編集 -->
         <div id="edit-list-container" class="item-scroll"></div>
 
         <!-- 目標討伐数設定エリア -->
         <div class="preset-container" style="margin-top:15px;">
             <div class="search-label" style="margin-bottom:8px; color:#3498db;">🎯 モンスターごとの目標討伐数設定</div>
+            
+            <!-- 一括設定用コントローラー -->
+            <div style="display:flex; align-items:center; gap:8px; background:#1a1a1a; padding:8px; border-radius:5px; margin-bottom:10px; border:1px solid #444;">
+                <span style="font-size:0.8rem; color:#ccc;">全モンスター一律:</span>
+                <input type="number" id="bulk-target-input" class="number-input" min="0" value="5" style="width:60px;">
+                <button class="bulk-btn" style="background:#3498db;" onclick="setBulkTarget()">一括適用</button>
+                <button class="bulk-btn" style="background:#e74c3c;" onclick="clearBulkTarget()">目標クリア (全0)</button>
+            </div>
+
             <div id="targets-edit-container" class="item-scroll" style="max-height: 180px;"></div>
         </div>
 
@@ -237,6 +259,8 @@ let state = {
     searchKana: null
 };
 
+let draggedItemIndex = null;
+
 function save() {
     localStorage.setItem('MHR_V15_DATA', JSON.stringify(state.monsters));
     localStorage.setItem('MHR_V15_STATS', JSON.stringify(state.stats));
@@ -244,7 +268,6 @@ function save() {
     localStorage.setItem('MHR_V17_PRESETS', JSON.stringify(state.presets));
 }
 
-// バックアップファイルのエクスポート（ダウンロード）
 function exportData() {
     const backupObj = {
         monsters: state.monsters,
@@ -252,7 +275,7 @@ function exportData() {
         targets: state.targets,
         note: state.note,
         presets: state.presets,
-        version: "1.18"
+        version: "1.18.1"
     };
     const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(backupObj, null, 2));
     const a = document.createElement('a');
@@ -263,7 +286,6 @@ function exportData() {
     a.remove();
 }
 
-// バックアップファイルのインポート（復元）
 function importData(event) {
     const file = event.target.files[0];
     if (!file) return;
@@ -296,7 +318,7 @@ function importData(event) {
         }
     };
     reader.readAsText(file);
-    event.target.value = ""; // リセットして再読み込み可能にする
+    event.target.value = "";
 }
 
 function switchTab(tab) {
@@ -456,7 +478,7 @@ function bulkEx(v) {
     state.monsters.forEach(m => {
         if(!state.searchLevel || m.ex == state.searchLevel) m.enabled = v;
     });
-    save(); renderSettings(); renderPresets();
+    save(); renderSettings(); renderPresets(); refresh();
 }
 
 function resetSearch() {
@@ -474,10 +496,39 @@ function getFiltered() {
         if(free && !m.name.toLowerCase().includes(free)) return false;
         return true;
     });
-    if(state.searchKana) {
-        list.sort((a, b) => a.name.localeCompare(b.name, 'ja'));
-    }
     return list;
+}
+
+/* 並び順変更関数（上下移動） */
+function moveItem(originalIndex, direction) {
+    const targetIndex = originalIndex + direction;
+    if (targetIndex < 0 || targetIndex >= state.monsters.length) return;
+
+    // 配列の要素を入れ替え
+    const temp = state.monsters[originalIndex];
+    state.monsters[originalIndex] = state.monsters[targetIndex];
+    state.monsters[targetIndex] = temp;
+
+    // 統計データ（討伐数・目標数）もキーを付け替え
+    const swapData = (obj) => {
+        const v1 = obj[originalIndex];
+        const v2 = obj[targetIndex];
+        if (v2 !== undefined) obj[originalIndex] = v2; else delete obj[originalIndex];
+        if (v1 !== undefined) obj[targetIndex] = v1; else delete obj[targetIndex];
+    };
+    swapData(state.stats);
+    swapData(state.targets);
+
+    // 当選中のインデックス追跡を補正
+    if (state.curIdx === originalIndex) state.curIdx = targetIndex;
+    else if (state.curIdx === targetIndex) state.curIdx = originalIndex;
+    
+    if (state.lastIdx === originalIndex) state.lastIdx = targetIndex;
+    else if (state.lastIdx === targetIndex) state.lastIdx = originalIndex;
+
+    save();
+    renderSettings();
+    refresh();
 }
 
 function toggleElementSelection(monsterIndex, targetElem) {
@@ -485,7 +536,7 @@ function toggleElementSelection(monsterIndex, targetElem) {
     
     if (targetElem === "なし") {
         state.monsters[monsterIndex].elems = ["なし"];
-        save(); renderSettings();
+        save(); renderSettings(); refresh();
         return;
     }
 
@@ -502,27 +553,61 @@ function toggleElementSelection(monsterIndex, targetElem) {
     }
 
     state.monsters[monsterIndex].elems = currentElems;
-    save(); renderSettings();
+    save(); renderSettings(); refresh();
 }
 
 function renderSettings() {
     const container = document.getElementById('edit-list-container');
     container.innerHTML = "";
-    getFiltered().forEach(m => {
+    
+    const isFiltered = !!(state.searchLevel || state.searchKana || document.getElementById('free-search').value.trim());
+
+    getFiltered().forEach((m, idx, arr) => {
         const statVal = state.stats[m.oid] || 0;
         const div = document.createElement('div');
         div.className = 'edit-row' + (m.enabled ? '' : ' disabled');
+        div.draggable = !isFiltered; // 絞り込み中でないときだけドラッグ移動可
+        div.dataset.index = m.oid;
+
         div.innerHTML = `
-            <div style="display:flex; align-items:center; gap:8px;">
+            <div style="display:flex; align-items:center; gap:6px;">
+                <span class="drag-handle" title="${isFiltered ? '検索解除でドラッグ移動可能' : 'ドラッグで移動'}">☰</span>
+                <div style="display:flex; flex-direction:column; gap:2px;">
+                    <button class="move-btn" onclick="moveItem(${m.oid}, -1)" ${m.oid === 0 || isFiltered ? 'disabled' : ''}>▲</button>
+                    <button class="move-btn" onclick="moveItem(${m.oid}, 1)" ${m.oid === state.monsters.length - 1 || isFiltered ? 'disabled' : ''}>▼</button>
+                </div>
                 <input type="checkbox" ${m.enabled?'checked':''} onchange="toggleEnable(${m.oid}, this.checked)">
                 <span style="font-size:0.7rem; color:#888; width:28px;">EX${m.ex}</span>
-                <input type="text" class="input-text" value="${m.name}" oninput="state.monsters[${m.oid}].name=this.value; save();">
-                <span style="font-size:0.75rem; color:#aaa; margin-left:5px;">討伐:</span>
-                <input type="number" class="number-input" min="0" value="${statVal}" onchange="updateStatValue(${m.oid}, this.value)">
+                <input type="text" class="input-text" value="${m.name}" oninput="state.monsters[${m.oid}].name=this.value; save(); refresh();">
+                <span style="font-size:0.75rem; color:#aaa; margin-left:3px;">討伐:</span>
+                <input type="number" class="number-input" min="0" value="${statVal}" oninput="updateStatValue(${m.oid}, this.value)">
                 <button class="delete-btn" onclick="deleteItem(${m.oid}, '${m.name}')" title="削除">❌</button>
             </div>
-            <div style="display:flex; gap:3px; margin-top:5px; margin-left:36px;" id="el-${m.oid}"></div>
+            <div style="display:flex; gap:3px; margin-top:5px; margin-left:55px;" id="el-${m.oid}"></div>
         `;
+
+        // ドラッグ＆ドロップ イベントリスナーの設定（絞り込み時は無効）
+        if (!isFiltered) {
+            div.addEventListener('dragstart', (e) => {
+                draggedItemIndex = m.oid;
+                e.target.classList.add('dragging');
+            });
+            div.addEventListener('dragend', (e) => {
+                e.target.classList.remove('dragging');
+                draggedItemIndex = null;
+            });
+            div.addEventListener('dragover', (e) => {
+                e.preventDefault();
+            });
+            div.addEventListener('drop', (e) => {
+                e.preventDefault();
+                const targetIdx = parseInt(div.dataset.index, 10);
+                if (draggedItemIndex !== null && draggedItemIndex !== targetIdx) {
+                    moveItemToTarget(draggedItemIndex, targetIdx);
+                }
+            });
+        }
+
         const sel = div.querySelector(`#el-${m.oid}`);
         const currentSelected = m.elems || ["なし"];
         
@@ -539,6 +624,37 @@ function renderSettings() {
     renderTargetsEdit();
 }
 
+/* ドラッグ＆ドロップ時の移動処理 */
+function moveItemToTarget(fromIdx, toIdx) {
+    const movedItem = state.monsters.splice(fromIdx, 1)[0];
+    state.monsters.splice(toIdx, 0, movedItem);
+
+    // 統計・目標のデータ並べ替え
+    const rebuildObj = (obj) => {
+        let newObj = {};
+        let items = [];
+        for(let i=0; i<state.monsters.length + 1; i++) {
+            items.push(obj[i]);
+        }
+        const moved = items.splice(fromIdx, 1)[0];
+        items.splice(toIdx, 0, moved);
+        items.forEach((val, i) => {
+            if (val !== undefined) newObj[i] = val;
+        });
+        return newObj;
+    };
+
+    state.stats = rebuildObj(state.stats);
+    state.targets = rebuildObj(state.targets);
+
+    state.curIdx = null;
+    state.lastIdx = null;
+
+    save();
+    renderSettings();
+    refresh();
+}
+
 function renderTargetsEdit() {
     const container = document.getElementById('targets-edit-container');
     container.innerHTML = "";
@@ -550,7 +666,7 @@ function renderTargetsEdit() {
         div.innerHTML = `
             <span>${m.name} <small style="color:#888;">[EX${m.ex}]</small></span>
             <div>
-                目標: <input type="number" class="number-input" min="0" value="${targetVal}" onchange="updateTargetValue(${i}, this.value)"> 体
+                目標: <input type="number" class="number-input" min="0" value="${targetVal}" oninput="updateTargetValue(${i}, this.value)"> 体
             </div>
         `;
         container.appendChild(div);
@@ -561,16 +677,43 @@ function updateStatValue(index, value) {
     const val = parseInt(value, 10);
     state.stats[index] = (!isNaN(val) && val >= 0) ? val : 0;
     save();
+    refresh();
 }
 
 function updateTargetValue(index, value) {
     const val = parseInt(value, 10);
     state.targets[index] = (!isNaN(val) && val >= 0) ? val : 0;
     save();
+    refresh();
 }
 
-function toggleEnable(i, v) { state.monsters[i].enabled = v; save(); renderSettings(); }
-function selectAll(b) { getFiltered().forEach(m => state.monsters[m.oid].enabled = b); save(); renderSettings(); }
+function setBulkTarget() {
+    const inputVal = parseInt(document.getElementById('bulk-target-input').value, 10);
+    const targetVal = (!isNaN(inputVal) && inputVal >= 0) ? inputVal : 0;
+    
+    if (confirm(`すべてのモンスターの目標討伐数を一律 ${targetVal} 体 に設定しますか？`)) {
+        state.monsters.forEach((_, i) => {
+            state.targets[i] = targetVal;
+        });
+        save();
+        renderTargetsEdit();
+        refresh();
+    }
+}
+
+function clearBulkTarget() {
+    if (confirm("すべてのモンスターの目標討伐数をクリア (0に設定) しますか？")) {
+        state.monsters.forEach((_, i) => {
+            state.targets[i] = 0;
+        });
+        save();
+        renderTargetsEdit();
+        refresh();
+    }
+}
+
+function toggleEnable(i, v) { state.monsters[i].enabled = v; save(); renderSettings(); refresh(); }
+function selectAll(b) { getFiltered().forEach(m => state.monsters[m.oid].enabled = b); save(); renderSettings(); refresh(); }
 
 function addNewItem() { 
     state.monsters.push({
@@ -580,7 +723,8 @@ function addNewItem() {
         enabled: true
     }); 
     save(); 
-    renderSettings(); 
+    renderSettings();
+    refresh();
 }
 
 function deleteItem(index, name) {
@@ -609,6 +753,7 @@ function deleteItem(index, name) {
         
         save();
         renderSettings();
+        refresh();
     }
 }
 
