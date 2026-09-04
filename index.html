@@ -2,105 +2,130 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>傀異ルーレット Ver. 1.18.1</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>傀異ルーレット Ver. 1.18.2</title>
     <style>
         :root { --accent-color: #ff4757; --bg-dark: #1a1a1a; --panel-bg: #2d2d2d; }
+        
+        /* スマホでの横スクロール（はみ出し）を強制防止 */
+        html, body {
+            max-width: 100vw;
+            overflow-x: hidden;
+            box-sizing: border-box;
+        }
+        *, *:before, *:after {
+            box-sizing: inherit;
+        }
+
         body {
             font-family: sans-serif; display: flex; justify-content: center;
-            background-color: var(--bg-dark); color: #e0e0e0; margin: 0; padding: 15px;
-            min-height: 100vh; box-sizing: border-box;
+            background-color: var(--bg-dark); color: #e0e0e0; margin: 0; padding: 10px;
+            min-height: 100vh;
         }
         .container {
-            background: var(--panel-bg); padding: 20px; border-radius: 15px;
+            background: var(--panel-bg); padding: 15px; border-radius: 15px;
             width: 100%; max-width: 900px; text-align: center;
             border: 1px solid #444; display: flex; flex-direction: column; gap: 15px;
+            overflow: hidden; /* コンテナ外へのみだし防止 */
         }
         .header-area { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #444; padding-bottom: 10px; }
+        .header-area h1 { font-size: 1.2rem; margin: 0; }
         
         /* タブシステム */
         .tab-container { display: flex; gap: 5px; border-bottom: 2px solid #444; padding-bottom: 0; }
-        .tab-btn { background: #333; border: 1px solid #444; border-bottom: none; color: #aaa; padding: 10px 20px; border-radius: 8px 8px 0 0; cursor: pointer; font-size: 0.9rem; font-weight: bold; transition: 0.2s; }
+        .tab-btn { background: #333; border: 1px solid #444; border-bottom: none; color: #aaa; padding: 8px 12px; border-radius: 8px 8px 0 0; cursor: pointer; font-size: 0.85rem; font-weight: bold; transition: 0.2s; flex: 1; }
         .tab-btn.active { background: var(--accent-color); color: #fff; border-color: var(--accent-color); }
         .tab-content { display: none; }
         .tab-content.active { display: block; }
 
         /* ルーレット用レイアウト */
-        .main-content { display: flex; flex-direction: column; gap: 20px; }
+        .main-content { display: flex; flex-direction: column; gap: 15px; }
         @media (min-width: 768px) { .main-content { flex-direction: row; } .left-panel { flex: 1.2; } .right-panel { flex: 0.8; } }
         
-        #settings-panel { display: none; text-align: left; background: #333; padding: 15px; border-radius: 10px; border: 1px solid #555; margin-bottom: 15px; }
+        #settings-panel { display: none; text-align: left; background: #333; padding: 12px; border-radius: 10px; border: 1px solid #555; margin-bottom: 15px; }
         
         /* バックアップ＆プリセットエリア */
-        .preset-container { background: #222; border: 1px solid #555; padding: 12px; border-radius: 8px; margin-bottom: 12px; }
-        .preset-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; background: #2d2d2d; padding: 6px 10px; border-radius: 5px; margin-bottom: 5px; border: 1px solid #444; }
-        .preset-name { font-size: 0.85rem; color: #fff; font-weight: bold; flex-grow: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-        .preset-empty { font-size: 0.8rem; color: #777; font-style: italic; }
-        .preset-action-btn { font-size: 0.7rem; padding: 4px 8px; border: none; border-radius: 3px; cursor: pointer; color: white; transition: 0.2s; }
+        .preset-container { background: #222; border: 1px solid #555; padding: 10px; border-radius: 8px; margin-bottom: 10px; }
+        .preset-row { display: flex; align-items: center; justify-content: space-between; gap: 6px; background: #2d2d2d; padding: 6px 8px; border-radius: 5px; margin-bottom: 5px; border: 1px solid #444; }
+        .preset-name { font-size: 0.8rem; color: #fff; font-weight: bold; flex-grow: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .preset-empty { font-size: 0.75rem; color: #777; font-style: italic; }
+        .preset-action-btn { font-size: 0.7rem; padding: 4px 6px; border: none; border-radius: 3px; cursor: pointer; color: white; transition: 0.2s; white-space: nowrap; }
 
-        .search-container { background: #252525; padding: 12px; border-radius: 8px; border: 1px solid #444; margin-bottom: 10px; }
+        .search-container { background: #252525; padding: 10px; border-radius: 8px; border: 1px solid #444; margin-bottom: 10px; }
         .search-label { font-size: 0.7rem; color: #888; margin-bottom: 5px; font-weight: bold; }
         
-        .index-grid { display: grid; gap: 4px; margin-bottom: 10px; }
+        .index-grid { display: grid; gap: 3px; margin-bottom: 8px; }
         .ex-grid { grid-template-columns: repeat(9, 1fr); }
         .kana-grid { grid-template-columns: repeat(5, 1fr); }
         
-        .index-btn { background: #444; border: 1px solid #555; color: #ccc; font-size: 0.75rem; padding: 6px 0; border-radius: 4px; cursor: pointer; }
+        .index-btn { background: #444; border: 1px solid #555; color: #ccc; font-size: 0.7rem; padding: 5px 0; border-radius: 4px; cursor: pointer; text-align: center; }
         .index-btn.active { background: var(--accent-color); color: #fff; border-color: var(--accent-color); }
         
-        .bulk-actions { display: flex; gap: 5px; margin-bottom: 10px; flex-wrap: wrap; }
-        .bulk-btn { border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 0.75rem; color: white; }
+        .bulk-actions { display: flex; gap: 4px; margin-bottom: 10px; flex-wrap: wrap; }
+        .bulk-btn { border: none; padding: 5px 8px; border-radius: 4px; cursor: pointer; font-size: 0.7rem; color: white; white-space: nowrap; }
 
-        .item-scroll { max-height: 380px; overflow-y: auto; background: #1a1a1a; padding: 10px; border-radius: 6px; border: 1px solid #444; margin-bottom: 10px; }
+        .item-scroll { max-height: 350px; overflow-y: auto; background: #1a1a1a; padding: 8px; border-radius: 6px; border: 1px solid #444; margin-bottom: 10px; }
         
         /* 編集用行アイテム */
         .edit-row { 
             padding: 8px; border-bottom: 1px solid #2a2a2a; transition: background-color 0.2s; 
             background: #222; border-radius: 6px; margin-bottom: 6px; border: 1px solid #333;
+            overflow: hidden;
         }
         .edit-row.dragging { opacity: 0.4; background: #444; }
         .edit-row.disabled { opacity: 0.5; }
         
-        .drag-handle { cursor: grab; color: #888; font-size: 1.1rem; padding: 0 4px; user-select: none; touch-action: none; }
+        .drag-handle { cursor: grab; color: #888; font-size: 1rem; padding: 0 2px; user-select: none; touch-action: none; }
         .drag-handle:active { cursor: grabbing; color: var(--accent-color); }
         
-        .move-btn { background: #333; border: 1px solid #555; color: #ccc; font-size: 0.65rem; padding: 2px 5px; border-radius: 3px; cursor: pointer; }
+        .move-btn { background: #333; border: 1px solid #555; color: #ccc; font-size: 0.6rem; padding: 2px 4px; border-radius: 3px; cursor: pointer; }
         .move-btn:hover { background: #555; color: #fff; }
         .move-btn:disabled { opacity: 0.3; cursor: not-allowed; }
 
-        .input-text { background: transparent; border: none; border-bottom: 1px solid #444; color: #fff; padding: 4px; flex-grow: 1; font-size: 0.9rem; }
-        .elem-btn { background: #333; border: 1px solid #555; color: #888; font-size: 0.65rem; padding: 2px 5px; border-radius: 3px; cursor: pointer; }
+        .input-text { background: transparent; border: none; border-bottom: 1px solid #444; color: #fff; padding: 2px 4px; flex-grow: 1; font-size: 0.85rem; min-width: 0; }
+        .elem-btn { background: #333; border: 1px solid #555; color: #888; font-size: 0.6rem; padding: 2px 4px; border-radius: 3px; cursor: pointer; flex: 1; text-align: center; min-width: 0; }
         .elem-btn.active { background: var(--accent-color); color: white; }
-        .delete-btn { background: none; border: none; color: #e74c3c; cursor: pointer; font-size: 0.9rem; padding: 0 5px; transition: 0.2s; }
-        .delete-btn:hover { transform: scale(1.2); }
+        .delete-btn { background: none; border: none; color: #e74c3c; cursor: pointer; font-size: 0.85rem; padding: 0 3px; transition: 0.2s; }
 
-        .main-btn { background-color: var(--accent-color); border: none; height: 60px; border-radius: 10px; cursor: pointer; width: 100%; color: white; font-size: 1.1rem; font-weight: bold; margin-top: 10px; box-shadow: 0 4px 0 #b3323d; }
+        .main-btn { background-color: var(--accent-color); border: none; height: 50px; border-radius: 10px; cursor: pointer; width: 100%; color: white; font-size: 1rem; font-weight: bold; margin-top: 10px; box-shadow: 0 4px 0 #b3323d; }
         .main-btn:active { transform: translateY(2px); box-shadow: 0 2px 0 #b3323d; }
         
         /* 討伐ボタン */
-        .kill-btn { background-color: #2ecc71; border: none; height: 50px; border-radius: 10px; cursor: pointer; width: 100%; color: white; font-size: 1rem; font-weight: bold; margin-top: 10px; box-shadow: 0 4px 0 #27ae60; transition: 0.1s; }
+        .kill-btn { background-color: #2ecc71; border: none; height: 45px; border-radius: 10px; cursor: pointer; width: 100%; color: white; font-size: 0.95rem; font-weight: bold; margin-top: 10px; box-shadow: 0 4px 0 #27ae60; transition: 0.1s; }
         .kill-btn:active { transform: translateY(2px); box-shadow: 0 2px 0 #27ae60; }
         .kill-btn:disabled { background-color: #555; box-shadow: none; cursor: not-allowed; opacity: 0.6; }
 
-        .stats-info { font-size: 0.8rem; color: #aaa; margin: 10px 0; line-height: 1.6; }
+        .stats-info { font-size: 0.8rem; color: #aaa; margin: 10px 0; line-height: 1.5; }
         .stats-highlight { color: var(--accent-color); font-weight: bold; }
-        .last-res-area { margin-top: 10px; padding-top: 10px; border-top: 1px dashed #444; font-size: 0.85rem; color: #888; }
+        .last-res-area { margin-top: 8px; padding-top: 8px; border-top: 1px dashed #444; font-size: 0.8rem; color: #888; }
 
         /* メモ帳タブ用スタイル */
-        .notepad-area { text-align: left; display: flex; flex-direction: column; gap: 10px; }
-        .notepad-toolbar { display: flex; gap: 8px; background: #252525; padding: 8px 12px; border-radius: 6px; border: 1px solid #444; }
-        .tool-btn { background: #444; border: 1px solid #555; color: #fff; font-size: 0.75rem; padding: 4px 10px; border-radius: 4px; cursor: pointer; transition: 0.2s; }
+        .notepad-area { text-align: left; display: flex; flex-direction: column; gap: 8px; }
+        .notepad-toolbar { display: flex; gap: 6px; background: #252525; padding: 6px 10px; border-radius: 6px; border: 1px solid #444; flex-wrap: wrap; }
+        .tool-btn { background: #444; border: 1px solid #555; color: #fff; font-size: 0.7rem; padding: 4px 8px; border-radius: 4px; cursor: pointer; transition: 0.2s; }
         .tool-btn:hover { background: #555; border-color: var(--accent-color); }
-        .notepad-textarea { width: 100%; height: 450px; background: #1a1a1a; color: #e0e0e0; border: 1px solid #444; border-radius: 10px; padding: 15px; box-sizing: border-box; font-family: monospace; font-size: 0.95rem; line-height: 1.5; resize: vertical; outline: none; }
+        .notepad-textarea { width: 100%; height: 380px; background: #1a1a1a; color: #e0e0e0; border: 1px solid #444; border-radius: 10px; padding: 10px; box-sizing: border-box; font-family: monospace; font-size: 0.9rem; line-height: 1.4; resize: vertical; outline: none; }
         .notepad-textarea:focus { border-color: var(--accent-color); }
-        .notepad-footer { display: flex; justify-content: space-between; align-items: center; font-size: 0.8rem; color: #888; }
+        .notepad-footer { display: flex; justify-content: space-between; align-items: center; font-size: 0.75rem; color: #888; }
         
-        /* 討伐数＆目標数入力用 */
-        .number-input { width: 50px; background: #1a1a1a; border: 1px solid #555; color: #fff; text-align: right; padding: 3px 5px; border-radius: 4px; font-size: 0.8rem; }
-        .target-edit-row { display: flex; align-items: center; justify-content: space-between; padding: 6px 10px; background: #222; border-radius: 5px; margin-bottom: 5px; font-size: 0.85rem; }
+        /* 数値入力UI（矢印ボタン/スピンボタン消去・横スクロール対策） */
+        .number-input { 
+            width: 48px; background: #1a1a1a; border: 1px solid #555; color: #fff; text-align: center; padding: 3px 2px; border-radius: 4px; font-size: 0.8rem;
+            -moz-appearance: textfield; /* Firefox */
+        }
+        /* Chrome, Safari, Edge, Opera の矢印ボタン非表示 */
+        .number-input::-webkit-outer-spin-button,
+        .number-input::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+
+        .target-edit-row { display: flex; align-items: center; justify-content: space-between; padding: 6px 8px; background: #222; border-radius: 5px; margin-bottom: 4px; font-size: 0.8rem; border: 1px solid #333; gap: 4px; }
+        .input-group { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
+        .input-label-unit { font-size: 0.7rem; color: #aaa; }
         
         /* プログレスバー */
-        .progress-bar-bg { width: 100%; background: #444; height: 6px; border-radius: 3px; overflow: hidden; margin-top: 4px; }
+        .progress-bar-bg { width: 100%; background: #444; height: 5px; border-radius: 3px; overflow: hidden; margin-top: 3px; }
         .progress-bar-fill { height: 100%; background: #2ecc71; width: 0%; transition: width 0.3s; }
     </style>
 </head>
@@ -109,8 +134,8 @@
 <div class="container">
     <div class="header-area">
         <div style="width:25px"></div>
-        <h1>傀異ルーレット Ver. 1.18.1</h1>
-        <button onclick="toggleSettings()" style="background:none; border:none; color:#aaa; cursor:pointer; font-size:1.4rem;">⚙️</button>
+        <h1>傀異ルーレット Ver. 1.18.2</h1>
+        <button onclick="toggleSettings()" style="background:none; border:none; color:#aaa; cursor:pointer; font-size:1.3rem; padding:0;">⚙️</button>
     </div>
 
     <!-- タブ切り替えボタン -->
@@ -123,18 +148,18 @@
     <div id="settings-panel">
         <!-- ファイルバックアップ＆復元機能 -->
         <div class="preset-container" style="border-color: #2ecc71;">
-            <div class="search-label" style="margin-bottom:8px; color:#2ecc71;">📦 外部保存・復元 (閲覧履歴消去対策)</div>
-            <div style="display:flex; gap:8px;">
+            <div class="search-label" style="margin-bottom:6px; color:#2ecc71;">📦 外部保存・復元 (閲覧履歴消去対策)</div>
+            <div style="display:flex; gap:6px;">
                 <button class="bulk-btn" style="background:#2ecc71; flex:1;" onclick="exportData()">💾 設定をファイルに保存</button>
                 <button class="bulk-btn" style="background:#3498db; flex:1;" onclick="document.getElementById('import-file-input').click()">📁 ファイルから復元</button>
                 <input type="file" id="import-file-input" accept=".json" style="display:none;" onchange="importData(event)">
             </div>
-            <div style="font-size:0.7rem; color:#aaa; margin-top:6px;">※Chromeの履歴を消去する前に「保存」しておくと、消去後も「復元」で元の状態に戻せます。</div>
+            <div style="font-size:0.65rem; color:#aaa; margin-top:4px;">※Chromeの履歴を消去する前に「保存」しておくと、消去後も「復元」で元の状態に戻せます。</div>
         </div>
 
         <!-- プリセット管理エリア -->
         <div class="preset-container">
-            <div class="search-label" style="margin-bottom:8px; color:var(--accent-color);">💾 ルーレット構成プリセット (最大5つ)</div>
+            <div class="search-label" style="margin-bottom:6px; color:var(--accent-color);">💾 ルーレット構成プリセット (最大5つ)</div>
             <div id="presets-list-area"></div>
         </div>
 
@@ -146,13 +171,13 @@
             <div class="index-grid kana-grid" id="kana-index"></div>
 
             <div style="display:flex; gap:5px;">
-                <input type="text" id="free-search" style="background:#1a1a1a; border:1px solid #555; color:#fff; padding:8px; border-radius:4px; flex-grow:1; font-size:0.8rem;" placeholder="名前で検索..." oninput="renderSettings()">
-                <button onclick="resetSearch()" style="background:#555; border:none; color:white; padding:0 10px; border-radius:4px; cursor:pointer; font-size:0.75rem;">解除</button>
+                <input type="text" id="free-search" style="background:#1a1a1a; border:1px solid #555; color:#fff; padding:6px; border-radius:4px; flex-grow:1; font-size:0.8rem; min-width:0;" placeholder="名前で検索..." oninput="renderSettings()">
+                <button onclick="resetSearch()" style="background:#555; border:none; color:white; padding:0 8px; border-radius:4px; cursor:pointer; font-size:0.75rem; shrink:0;">解除</button>
             </div>
         </div>
 
         <div class="bulk-actions">
-            <div style="width:100%; font-size:0.7rem; color:#888; margin-bottom:5px;">一括操作:</div>
+            <div style="width:100%; font-size:0.65rem; color:#888; margin-bottom:3px;">一括操作:</div>
             <button onclick="bulkEx(true)" class="bulk-btn" style="background:#3498db;" id="btn-ex-on">全EXを全て有効</button>
             <button onclick="bulkEx(false)" class="bulk-btn" style="background:#e67e22;" id="btn-ex-off">全EXを全て無効</button>
             <button onclick="selectAll(true)" class="bulk-btn" style="background:#2ecc71;">表示中を全て有効</button>
@@ -160,39 +185,48 @@
             <button onclick="addNewItem()" class="bulk-btn" style="background:#444;">＋新規追加</button>
         </div>
         
-        <!-- モンスター編集＆並び順変更＆現在の討伐数編集 -->
+        <!-- モンスター編集＆並び順変更 -->
         <div id="edit-list-container" class="item-scroll"></div>
 
-        <!-- 目標討伐数設定エリア -->
-        <div class="preset-container" style="margin-top:15px;">
-            <div class="search-label" style="margin-bottom:8px; color:#3498db;">🎯 モンスターごとの目標討伐数設定</div>
+        <!-- 討伐数＆目標討伐数設定エリア（統一UI・矢印消去） -->
+        <div class="preset-container" style="margin-top:10px;">
+            <div class="search-label" style="margin-bottom:6px; color:#3498db;">📊 討伐数 ＆ 目標討伐数の管理</div>
             
             <!-- 一括設定用コントローラー -->
-            <div style="display:flex; align-items:center; gap:8px; background:#1a1a1a; padding:8px; border-radius:5px; margin-bottom:10px; border:1px solid #444;">
-                <span style="font-size:0.8rem; color:#ccc;">全モンスター一律:</span>
-                <input type="number" id="bulk-target-input" class="number-input" min="0" value="5" style="width:60px;">
-                <button class="bulk-btn" style="background:#3498db;" onclick="setBulkTarget()">一括適用</button>
-                <button class="bulk-btn" style="background:#e74c3c;" onclick="clearBulkTarget()">目標クリア (全0)</button>
+            <div style="display:flex; flex-direction:column; gap:6px; background:#1a1a1a; padding:8px; border-radius:5px; margin-bottom:8px; border:1px solid #444;">
+                <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
+                    <span style="font-size:0.75rem; color:#ccc;">現在の討伐数:</span>
+                    <input type="number" id="bulk-stat-input" class="number-input" min="0" value="0">
+                    <button class="bulk-btn" style="background:#2ecc71;" onclick="setBulkValue('stat')">一律適用</button>
+                    <button class="bulk-btn" style="background:#e74c3c;" onclick="clearBulkValue('stat')">全0リセット</button>
+                </div>
+                <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
+                    <span style="font-size:0.75rem; color:#ccc;">目標討伐数:</span>
+                    <input type="number" id="bulk-target-input" class="number-input" min="0" value="5">
+                    <button class="bulk-btn" style="background:#3498db;" onclick="setBulkValue('target')">一律適用</button>
+                    <button class="bulk-btn" style="background:#e74c3c;" onclick="clearBulkValue('target')">全0クリア</button>
+                </div>
             </div>
 
-            <div id="targets-edit-container" class="item-scroll" style="max-height: 180px;"></div>
+            <!-- 個別設定エリア -->
+            <div id="targets-edit-container" class="item-scroll" style="max-height: 200px;"></div>
         </div>
 
-        <button class="main-btn" style="height:40px; font-size:0.9rem;" onclick="toggleSettings()">保存して戻る</button>
+        <button class="main-btn" style="height:38px; font-size:0.85rem;" onclick="toggleSettings()">保存して戻る</button>
     </div>
 
     <!-- タブ1: ルーレットコンテンツ -->
     <div id="tab-roulette" class="tab-content active">
         <div class="main-content">
             <div class="left-panel">
-                <div style="background:#1e1e1e; border:1px solid #444; border-radius:10px; padding:20px 10px; min-height:220px; display:flex; flex-direction:column; justify-content:center; align-items:center; gap:8px;">
+                <div style="background:#1e1e1e; border:1px solid #444; border-radius:10px; padding:15px 8px; min-height:200px; display:flex; flex-direction:column; justify-content:center; align-items:center; gap:6px;">
                     <div id="res-ex" style="background:#444; color:#fff; font-size:0.7rem; padding:2px 8px; border-radius:4px; visibility:hidden;">EX-</div>
-                    <div id="res-name" style="font-size:1.8rem; font-weight:bold; color:#fff;">ターゲット</div>
+                    <div id="res-name" style="font-size:1.6rem; font-weight:bold; color:#fff; word-break:break-all;">ターゲット</div>
                     
                     <!-- 当選モンスターの目標進捗表示エリア -->
-                    <div id="res-count" style="font-size:1.1rem; font-weight:bold; color:#2ecc71; visibility:hidden;">討伐数: 0体</div>
+                    <div id="res-count" style="font-size:1rem; font-weight:bold; color:#2ecc71; visibility:hidden;">討伐数: 0体</div>
                     
-                    <div id="res-elem" style="font-size:0.85rem; color:var(--accent-color); border:1px solid var(--accent-color); padding:3px 12px; border-radius:20px; visibility:hidden;">-</div>
+                    <div id="res-elem" style="font-size:0.8rem; color:var(--accent-color); border:1px solid var(--accent-color); padding:2px 10px; border-radius:20px; visibility:hidden;">-</div>
                     
                     <div class="last-res-area" id="last-res-box" style="visibility:hidden;">
                         前回：<span id="last-name">なし</span> <span id="last-elem" style="font-size:0.75rem;">(-)</span>
@@ -209,12 +243,12 @@
             </div>
             
             <div class="right-panel">
-                <div style="background:#252525; padding:15px; border-radius:10px; border:1px solid #444; height:100%;">
+                <div style="background:#252525; padding:12px; border-radius:10px; border:1px solid #444; height:100%;">
                     <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--accent-color); padding-bottom:5px; font-size:0.85rem;">
                         <b>討伐記録 & 目標進捗</b>
                         <button style="font-size:0.65rem; background:#444; color:#ccc; border:none; padding:2px 5px; cursor:pointer;" onclick="resetStatsOnly()">リセット</button>
                     </div>
-                    <ul id="history-list" style="overflow-y:auto; list-style:none; padding:0; margin:10px 0 0 0; max-height:400px; text-align:left;"></ul>
+                    <ul id="history-list" style="overflow-y:auto; list-style:none; padding:0; margin:8px 0 0 0; max-height:350px; text-align:left;"></ul>
                 </div>
             </div>
         </div>
@@ -227,10 +261,10 @@
                 <button class="tool-btn" onclick="insertUnderline('divider')">➖ 区切り線 (---)</button>
                 <button class="tool-btn" onclick="insertUnderline('border')">＿＿ 下線枠 (＿＿)</button>
             </div>
-            <textarea id="notepad-core" class="notepad-textarea" placeholder="ここに装備構成、討伐のコツ、周回メモ、目標タスクなどをがっつり書き込めます..." oninput="saveNote()"></textarea>
+            <textarea id="notepad-core" class="notepad-textarea" placeholder="ここに装備構成、討伐のコツ、周回メモ、目標タスクなどを書き込めます..." oninput="saveNote()"></textarea>
             <div class="notepad-footer">
                 <span id="note-char-count">0 文字</span>
-                <button style="font-size:0.7rem; background:#444; color:#ccc; border:none; padding:4px 8px; border-radius:4px; cursor:pointer;" onclick="clearNote()">全消去</button>
+                <button style="font-size:0.7rem; background:#444; color:#ccc; border:none; padding:3px 6px; border-radius:4px; cursor:pointer;" onclick="clearNote()">全消去</button>
             </div>
         </div>
     </div>
@@ -249,7 +283,7 @@ const defaultData = [
 
 let state = {
     monsters: JSON.parse(localStorage.getItem('MHR_V15_DATA')) || defaultData,
-    stats: JSON.parse(localStorage.getItem('MHR_V15_STATS')) || {},
+    stats: {}, // 討伐数を 0 にリセット
     targets: JSON.parse(localStorage.getItem('MHR_V18_TARGETS')) || {},
     note: localStorage.getItem('MHR_V16_NOTE') || "",
     presets: JSON.parse(localStorage.getItem('MHR_V17_PRESETS')) || [null, null, null, null, null],
@@ -258,8 +292,6 @@ let state = {
     searchLevel: null,
     searchKana: null
 };
-
-let draggedItemIndex = null;
 
 function save() {
     localStorage.setItem('MHR_V15_DATA', JSON.stringify(state.monsters));
@@ -275,7 +307,7 @@ function exportData() {
         targets: state.targets,
         note: state.note,
         presets: state.presets,
-        version: "1.18.1"
+        version: "1.18.2"
     };
     const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(backupObj, null, 2));
     const a = document.createElement('a');
@@ -392,7 +424,7 @@ function renderPresets() {
         } else {
             row.innerHTML = `
                 <div class="preset-name preset-empty">スロット${i+1}: 未登録</div>
-                <button class="preset-action-btn" style="background:#3498db;" onclick="savePreset(${i}, false)">現在の設定を保存</button>
+                <button class="preset-action-btn" style="background:#3498db;" onclick="savePreset(${i}, false)">保存</button>
             `;
         }
         area.appendChild(row);
@@ -499,17 +531,14 @@ function getFiltered() {
     return list;
 }
 
-/* 並び順変更関数（上下移動） */
 function moveItem(originalIndex, direction) {
     const targetIndex = originalIndex + direction;
     if (targetIndex < 0 || targetIndex >= state.monsters.length) return;
 
-    // 配列の要素を入れ替え
     const temp = state.monsters[originalIndex];
     state.monsters[originalIndex] = state.monsters[targetIndex];
     state.monsters[targetIndex] = temp;
 
-    // 統計データ（討伐数・目標数）もキーを付け替え
     const swapData = (obj) => {
         const v1 = obj[originalIndex];
         const v2 = obj[targetIndex];
@@ -519,7 +548,6 @@ function moveItem(originalIndex, direction) {
     swapData(state.stats);
     swapData(state.targets);
 
-    // 当選中のインデックス追跡を補正
     if (state.curIdx === originalIndex) state.curIdx = targetIndex;
     else if (state.curIdx === targetIndex) state.curIdx = originalIndex;
     
@@ -563,50 +591,24 @@ function renderSettings() {
     const isFiltered = !!(state.searchLevel || state.searchKana || document.getElementById('free-search').value.trim());
 
     getFiltered().forEach((m, idx, arr) => {
-        const statVal = state.stats[m.oid] || 0;
         const div = document.createElement('div');
         div.className = 'edit-row' + (m.enabled ? '' : ' disabled');
-        div.draggable = !isFiltered; // 絞り込み中でないときだけドラッグ移動可
         div.dataset.index = m.oid;
 
         div.innerHTML = `
-            <div style="display:flex; align-items:center; gap:6px;">
-                <span class="drag-handle" title="${isFiltered ? '検索解除でドラッグ移動可能' : 'ドラッグで移動'}">☰</span>
-                <div style="display:flex; flex-direction:column; gap:2px;">
+            <div style="display:flex; align-items:center; gap:4px;">
+                <span class="drag-handle">☰</span>
+                <div style="display:flex; flex-direction:column; gap:1px;">
                     <button class="move-btn" onclick="moveItem(${m.oid}, -1)" ${m.oid === 0 || isFiltered ? 'disabled' : ''}>▲</button>
                     <button class="move-btn" onclick="moveItem(${m.oid}, 1)" ${m.oid === state.monsters.length - 1 || isFiltered ? 'disabled' : ''}>▼</button>
                 </div>
                 <input type="checkbox" ${m.enabled?'checked':''} onchange="toggleEnable(${m.oid}, this.checked)">
-                <span style="font-size:0.7rem; color:#888; width:28px;">EX${m.ex}</span>
+                <span style="font-size:0.65rem; color:#888; width:25px; shrink:0;">EX${m.ex}</span>
                 <input type="text" class="input-text" value="${m.name}" oninput="state.monsters[${m.oid}].name=this.value; save(); refresh();">
-                <span style="font-size:0.75rem; color:#aaa; margin-left:3px;">討伐:</span>
-                <input type="number" class="number-input" min="0" value="${statVal}" oninput="updateStatValue(${m.oid}, this.value)">
                 <button class="delete-btn" onclick="deleteItem(${m.oid}, '${m.name}')" title="削除">❌</button>
             </div>
-            <div style="display:flex; gap:3px; margin-top:5px; margin-left:55px;" id="el-${m.oid}"></div>
+            <div style="display:flex; gap:2px; margin-top:4px; margin-left:45px;" id="el-${m.oid}"></div>
         `;
-
-        // ドラッグ＆ドロップ イベントリスナーの設定（絞り込み時は無効）
-        if (!isFiltered) {
-            div.addEventListener('dragstart', (e) => {
-                draggedItemIndex = m.oid;
-                e.target.classList.add('dragging');
-            });
-            div.addEventListener('dragend', (e) => {
-                e.target.classList.remove('dragging');
-                draggedItemIndex = null;
-            });
-            div.addEventListener('dragover', (e) => {
-                e.preventDefault();
-            });
-            div.addEventListener('drop', (e) => {
-                e.preventDefault();
-                const targetIdx = parseInt(div.dataset.index, 10);
-                if (draggedItemIndex !== null && draggedItemIndex !== targetIdx) {
-                    moveItemToTarget(draggedItemIndex, targetIdx);
-                }
-            });
-        }
 
         const sel = div.querySelector(`#el-${m.oid}`);
         const currentSelected = m.elems || ["なし"];
@@ -624,49 +626,27 @@ function renderSettings() {
     renderTargetsEdit();
 }
 
-/* ドラッグ＆ドロップ時の移動処理 */
-function moveItemToTarget(fromIdx, toIdx) {
-    const movedItem = state.monsters.splice(fromIdx, 1)[0];
-    state.monsters.splice(toIdx, 0, movedItem);
-
-    // 統計・目標のデータ並べ替え
-    const rebuildObj = (obj) => {
-        let newObj = {};
-        let items = [];
-        for(let i=0; i<state.monsters.length + 1; i++) {
-            items.push(obj[i]);
-        }
-        const moved = items.splice(fromIdx, 1)[0];
-        items.splice(toIdx, 0, moved);
-        items.forEach((val, i) => {
-            if (val !== undefined) newObj[i] = val;
-        });
-        return newObj;
-    };
-
-    state.stats = rebuildObj(state.stats);
-    state.targets = rebuildObj(state.targets);
-
-    state.curIdx = null;
-    state.lastIdx = null;
-
-    save();
-    renderSettings();
-    refresh();
-}
-
+/* 討伐数＆目標討伐数の個別設定リストを描画 (矢印なし統一UI) */
 function renderTargetsEdit() {
     const container = document.getElementById('targets-edit-container');
     container.innerHTML = "";
     
     state.monsters.forEach((m, i) => {
+        const statVal = state.stats[i] || 0;
         const targetVal = state.targets[i] || 0;
         const div = document.createElement('div');
         div.className = 'target-edit-row';
         div.innerHTML = `
-            <span>${m.name} <small style="color:#888;">[EX${m.ex}]</small></span>
-            <div>
-                目標: <input type="number" class="number-input" min="0" value="${targetVal}" oninput="updateTargetValue(${i}, this.value)"> 体
+            <span style="font-weight:bold; color:#fff; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; flex-grow:1;">${m.name} <small style="color:#888; font-weight:normal;">[EX${m.ex}]</small></span>
+            <div class="input-group">
+                <div style="display:flex; align-items:center; gap:2px;">
+                    <span class="input-label-unit">討伐:</span>
+                    <input type="number" class="number-input" min="0" value="${statVal}" oninput="updateStatValue(${i}, this.value)">
+                </div>
+                <div style="display:flex; align-items:center; gap:2px;">
+                    <span class="input-label-unit">目標:</span>
+                    <input type="number" class="number-input" min="0" value="${targetVal}" oninput="updateTargetValue(${i}, this.value)">
+                </div>
             </div>
         `;
         container.appendChild(div);
@@ -687,13 +667,17 @@ function updateTargetValue(index, value) {
     refresh();
 }
 
-function setBulkTarget() {
-    const inputVal = parseInt(document.getElementById('bulk-target-input').value, 10);
+function setBulkValue(type) {
+    const inputId = type === 'stat' ? 'bulk-stat-input' : 'bulk-target-input';
+    const labelName = type === 'stat' ? '現在の討伐数' : '目標討伐数';
+    
+    const inputVal = parseInt(document.getElementById(inputId).value, 10);
     const targetVal = (!isNaN(inputVal) && inputVal >= 0) ? inputVal : 0;
     
-    if (confirm(`すべてのモンスターの目標討伐数を一律 ${targetVal} 体 に設定しますか？`)) {
+    if (confirm(`すべてのモンスターの${labelName}を一律 ${targetVal} 体 に設定しますか？`)) {
         state.monsters.forEach((_, i) => {
-            state.targets[i] = targetVal;
+            if (type === 'stat') state.stats[i] = targetVal;
+            else state.targets[i] = targetVal;
         });
         save();
         renderTargetsEdit();
@@ -701,10 +685,13 @@ function setBulkTarget() {
     }
 }
 
-function clearBulkTarget() {
-    if (confirm("すべてのモンスターの目標討伐数をクリア (0に設定) しますか？")) {
+function clearBulkValue(type) {
+    const labelName = type === 'stat' ? '現在の討伐数' : '目標討伐数';
+    
+    if (confirm(`すべてのモンスターの${labelName}をクリア (0に設定) しますか？`)) {
         state.monsters.forEach((_, i) => {
-            state.targets[i] = 0;
+            if (type === 'stat') state.stats[i] = 0;
+            else state.targets[i] = 0;
         });
         save();
         renderTargetsEdit();
@@ -881,6 +868,8 @@ function addKillCount() {
 }
 
 function resetStatsOnly() { if(confirm("記録をリセットしますか？")){ state.stats = {}; state.lastIdx = null; state.curIdx = null; save(); refresh(); } }
+
+save();
 refresh();
 </script>
 </body>
