@@ -94,7 +94,7 @@
 
         /* 数値入力UI (type="text" + inputmode="numeric" に最適化) */
         .number-input { 
-            width: 42px; background: #1a1a1a; border: 1px solid #555; color: #fff; text-align: center; padding: 2px; border-radius: 4px; font-size: 0.75rem;
+            width: 38px; background: #1a1a1a; border: 1px solid #555; color: #fff; text-align: center; padding: 2px; border-radius: 4px; font-size: 0.75rem;
         }
 
         /* プログレスバー */
@@ -163,7 +163,7 @@
             </div>
         </div>
         
-        <!-- モンスター編集＆目標設定リスト（一体型） -->
+        <!-- モンスター編集＆目標・討伐数設定リスト -->
         <div id="edit-list-container" class="item-scroll"></div>
 
         <button class="main-btn" style="height:38px; font-size:0.85rem;" onclick="toggleSettings()">保存して戻る</button>
@@ -497,6 +497,7 @@ function renderSettings() {
 
     getFiltered().forEach((m) => {
         const targetVal = state.targets[m.oid] !== undefined ? state.targets[m.oid] : 0;
+        const currentKillVal = state.stats[m.oid] !== undefined ? state.stats[m.oid] : 0;
         const div = document.createElement('div');
         div.className = 'edit-row' + (m.enabled ? '' : ' disabled');
         div.dataset.index = m.oid;
@@ -513,7 +514,8 @@ function renderSettings() {
                 <span style="font-size:0.65rem; color:#888; width:25px; shrink:0;">EX${m.ex}</span>
                 <input type="text" class="input-text" value="${m.name}" oninput="state.monsters[${m.oid}].name=this.value; save(); refresh();">
                 
-                <div style="display:flex; align-items:center; gap:2px; font-size:0.7rem; color:#aaa; shrink:0; margin-left:4px;">
+                <div style="display:flex; align-items:center; gap:2px; font-size:0.7rem; color:#aaa; shrink:0; margin-left:2px;">
+                    討伐:<input type="text" inputmode="numeric" pattern="[0-9]*" class="number-input kill-num-input" value="${currentKillVal}" oninput="updateKillValue(${m.oid}, this.value)">
                     目標:<input type="text" inputmode="numeric" pattern="[0-9]*" class="number-input target-num-input" value="${targetVal}" oninput="updateTargetValue(${m.oid}, this.value)">体
                 </div>
 
@@ -534,7 +536,7 @@ function renderSettings() {
         });
 
         // 動的生成された数値入力欄にカーソル末尾自動移動イベントを登録
-        div.querySelectorAll('.target-num-input').forEach(attachCursorEndEvents);
+        div.querySelectorAll('.number-input').forEach(attachCursorEndEvents);
 
         // ドラッグ＆ドロップ (PC Drag API) イベントの割り当て
         if (!isFiltered) {
@@ -601,6 +603,13 @@ function renderSettings() {
 
         container.appendChild(div);
     });
+}
+
+function updateKillValue(index, value) {
+    const val = parseInt(value.replace(/[^0-9]/g, ''), 10);
+    state.stats[index] = (!isNaN(val) && val >= 0) ? val : 0;
+    save();
+    refresh();
 }
 
 function updateTargetValue(index, value) {
@@ -718,7 +727,7 @@ function refresh() {
             if (remaining > 0) {
                 countText = `現在 ${currentCount}/${currentTarget}体 (目標まであと ${remaining} 体)`;
             } else {
-                countText = `現在 ${currentCount}/${currentTarget}体 (🎉 目標達成！)`;
+                countText = `現在 ${currentCount}/${currentTarget}体 (🎉 目標達成！)`
             }
         } else {
             countText = `討伐数: ${currentCount}体`;
