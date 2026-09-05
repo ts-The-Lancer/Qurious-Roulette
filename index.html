@@ -64,6 +64,7 @@
             padding: 8px; border-bottom: 1px solid #2a2a2a; transition: background-color 0.2s; 
             background: #222; border-radius: 6px; margin-bottom: 6px; border: 1px solid #333;
             overflow: hidden; position: relative;
+            display: flex; flex-direction: column; gap: 6px;
         }
         .edit-row.dragging { opacity: 0.4; background: #444; border: 1px dashed var(--accent-color); }
         .edit-row.disabled { opacity: 0.5; }
@@ -78,7 +79,7 @@
         .input-text { background: transparent; border: none; border-bottom: 1px solid #444; color: #fff; padding: 2px 4px; flex-grow: 1; font-size: 0.85rem; min-width: 0; }
         .elem-btn { background: #333; border: 1px solid #555; color: #888; font-size: 0.6rem; padding: 2px 4px; border-radius: 3px; cursor: pointer; flex: 1; text-align: center; min-width: 0; }
         .elem-btn.active { background: var(--accent-color); color: white; }
-        .delete-btn { background: none; border: none; color: #e74c3c; cursor: pointer; font-size: 0.85rem; padding: 0 3px; transition: 0.2s; }
+        .delete-btn { background: none; border: none; color: #e74c3c; cursor: pointer; font-size: 0.85rem; padding: 0 3px; transition: 0.2s; margin-left: auto; }
 
         .main-btn { background-color: var(--accent-color); border: none; height: 50px; border-radius: 10px; cursor: pointer; width: 100%; color: white; font-size: 1rem; font-weight: bold; margin-top: 10px; box-shadow: 0 4px 0 #b3323d; }
         .main-btn:active { transform: translateY(2px); box-shadow: 0 2px 0 #b3323d; }
@@ -504,7 +505,8 @@ function renderSettings() {
         if (!isFiltered) div.draggable = true;
 
         div.innerHTML = `
-            <div style="display:flex; align-items:center; gap:4px;">
+            <!-- 1行目: ドラッグ・移動ボタン・チェック・EX・名前・削除 -->
+            <div style="display:flex; align-items:center; gap:4px; width:100%;">
                 <span class="drag-handle" style="${isFiltered ? 'opacity:0.3; cursor:default;' : ''}">☰</span>
                 <div style="display:flex; flex-direction:column; gap:1px;">
                     <button class="move-btn" onclick="moveItem(${m.oid}, -1)" ${m.oid === 0 || isFiltered ? 'disabled' : ''}>▲</button>
@@ -513,15 +515,17 @@ function renderSettings() {
                 <input type="checkbox" ${m.enabled?'checked':''} onchange="toggleEnable(${m.oid}, this.checked)">
                 <span style="font-size:0.65rem; color:#888; width:25px; shrink:0;">EX${m.ex}</span>
                 <input type="text" class="input-text" value="${m.name}" oninput="state.monsters[${m.oid}].name=this.value; save(); refresh();">
-                
-                <div style="display:flex; align-items:center; gap:2px; font-size:0.7rem; color:#aaa; shrink:0; margin-left:2px;">
+                <button class="delete-btn" onclick="deleteItem(${m.oid}, '${m.name}')" title="削除">❌</button>
+            </div>
+            
+            <!-- 2行目: 討伐数・目標数入力欄 ＆ おすすめ属性ボタン -->
+            <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap; padding-left:45px;">
+                <div style="display:flex; align-items:center; gap:2px; font-size:0.7rem; color:#aaa; shrink:0;">
                     討伐:<input type="text" inputmode="numeric" pattern="[0-9]*" class="number-input kill-num-input" value="${currentKillVal}" oninput="updateKillValue(${m.oid}, this.value)">
                     目標:<input type="text" inputmode="numeric" pattern="[0-9]*" class="number-input target-num-input" value="${targetVal}" oninput="updateTargetValue(${m.oid}, this.value)">体
                 </div>
-
-                <button class="delete-btn" onclick="deleteItem(${m.oid}, '${m.name}')" title="削除">❌</button>
+                <div style="display:flex; gap:2px; flex:1;" id="el-${m.oid}"></div>
             </div>
-            <div style="display:flex; gap:2px; margin-top:5px; margin-left:45px;" id="el-${m.oid}"></div>
         `;
 
         const sel = div.querySelector(`#el-${m.oid}`);
