@@ -156,7 +156,7 @@
             
             <div style="display:flex; align-items:center; gap:4px; width:100%; flex-wrap:wrap;">
                 <span style="font-size:0.7rem; color:#ccc;">目標一括:</span>
-                <input type="text" inputmode="numeric" pattern="[0-9]*" id="bulk-target-input" class="number-input" value="0">
+                <input type="text" inputmode="numeric" pattern="[0-9]*" id="bulk-target-input" class="number-input" value="0" oninput="formatBulkTargetInput(this)">
                 <span style="font-size:0.7rem; color:#888;">体</span>
                 <button class="bulk-btn" style="background:#3498db;" onclick="setBulkTarget()">目標一律適用</button>
                 <button class="bulk-btn" style="background:#e74c3c;" onclick="clearBulkTarget()">目標全0クリア</button>
@@ -240,7 +240,7 @@ function moveCursorToEnd(el) {
 }
 
 function attachCursorEndEvents(element) {
-    ['focus', 'click', 'input', 'keyup'].forEach(evt => {
+    ['focus', 'click', 'keyup'].forEach(evt => {
         element.addEventListener(evt, () => moveCursorToEnd(element));
     });
 }
@@ -521,8 +521,8 @@ function renderSettings() {
             <!-- 2行目: 討伐数・目標数入力欄 ＆ おすすめ属性ボタン -->
             <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap; padding-left:45px;">
                 <div style="display:flex; align-items:center; gap:2px; font-size:0.7rem; color:#aaa; shrink:0;">
-                    討伐:<input type="text" inputmode="numeric" pattern="[0-9]*" class="number-input kill-num-input" value="${currentKillVal}" oninput="updateKillValue(${m.oid}, this.value)">
-                    目標:<input type="text" inputmode="numeric" pattern="[0-9]*" class="number-input target-num-input" value="${targetVal}" oninput="updateTargetValue(${m.oid}, this.value)">体
+                    討伐:<input type="text" inputmode="numeric" pattern="[0-9]*" class="number-input kill-num-input" value="${currentKillVal}" oninput="updateKillValue(${m.oid}, this)">
+                    目標:<input type="text" inputmode="numeric" pattern="[0-9]*" class="number-input target-num-input" value="${targetVal}" oninput="updateTargetValue(${m.oid}, this)">体
                 </div>
                 <div style="display:flex; gap:2px; flex:1;" id="el-${m.oid}"></div>
             </div>
@@ -609,24 +609,48 @@ function renderSettings() {
     });
 }
 
-function updateKillValue(index, value) {
-    const val = parseInt(value.replace(/[^0-9]/g, ''), 10);
-    state.stats[index] = (!isNaN(val) && val >= 0) ? val : 0;
+/* 数値入力時の「頭の0」を除去する補助関数 */
+function sanitizeNumberString(str) {
+    const digitsOnly = str.replace(/[^0-9]/g, '');
+    if (!digitsOnly) return '0';
+    const parsed = parseInt(digitsOnly, 10);
+    return isNaN(parsed) ? '0' : String(parsed);
+}
+
+function updateKillValue(index, inputEl) {
+    const cleanedStr = sanitizeNumberString(inputEl.value);
+    if (inputEl.value !== cleanedStr) {
+        inputEl.value = cleanedStr;
+        moveCursorToEnd(inputEl);
+    }
+    state.stats[index] = parseInt(cleanedStr, 10);
     save();
     refresh();
 }
 
-function updateTargetValue(index, value) {
-    const val = parseInt(value.replace(/[^0-9]/g, ''), 10);
-    state.targets[index] = (!isNaN(val) && val >= 0) ? val : 0;
+function updateTargetValue(index, inputEl) {
+    const cleanedStr = sanitizeNumberString(inputEl.value);
+    if (inputEl.value !== cleanedStr) {
+        inputEl.value = cleanedStr;
+        moveCursorToEnd(inputEl);
+    }
+    state.targets[index] = parseInt(cleanedStr, 10);
     save();
     refresh();
+}
+
+function formatBulkTargetInput(inputEl) {
+    const cleanedStr = sanitizeNumberString(inputEl.value);
+    if (inputEl.value !== cleanedStr) {
+        inputEl.value = cleanedStr;
+        moveCursorToEnd(inputEl);
+    }
 }
 
 function setBulkTarget() {
-    const rawVal = document.getElementById('bulk-target-input').value.replace(/[^0-9]/g, '');
-    const inputVal = parseInt(rawVal, 10);
-    const targetVal = (!isNaN(inputVal) && inputVal >= 0) ? inputVal : 0;
+    const bulkInput = document.getElementById('bulk-target-input');
+    const cleanedStr = sanitizeNumberString(bulkInput.value);
+    const targetVal = parseInt(cleanedStr, 10);
     
     const targets = getFiltered();
     if (targets.length === 0) return;
