@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>傀異ルーレット Ver. 1.18.2</title>
+    <title>傀異ルーレット Ver. 1.18.3</title>
     <style>
         :root { --accent-color: #ff4757; --bg-dark: #1a1a1a; --panel-bg: #2d2d2d; }
         
@@ -91,7 +91,6 @@
 
         .stats-info { font-size: 0.8rem; color: #aaa; margin: 10px 0; line-height: 1.5; }
         .stats-highlight { color: var(--accent-color); font-weight: bold; }
-        .last-res-area { margin-top: 8px; padding-top: 8px; border-top: 1px dashed #444; font-size: 0.8rem; color: #888; }
 
         /* 数値入力UI (type="text" + inputmode="numeric" に最適化) */
         .number-input { 
@@ -108,7 +107,7 @@
 <div class="container">
     <div class="header-area">
         <div style="width:25px"></div>
-        <h1>傀異ルーレット Ver. 1.18.2</h1>
+        <h1>傀異ルーレット Ver. 1.18.3</h1>
         <button onclick="toggleSettings()" style="background:none; border:none; color:#aaa; cursor:pointer; font-size:1.3rem; padding:0;">⚙️</button>
     </div>
 
@@ -127,7 +126,7 @@
 
         <!-- プリセット管理エリア -->
         <div class="preset-container">
-            <div class="search-label" style="margin-bottom:6px; color:var(--accent-color);">💾 ルーレット構成プリセット (最大5つ)</div>
+            <div class="search-label" style="margin-bottom:6px; color:var(--accent-color);">💾 ルーレット構成プリセット (最大3つ)</div>
             <div id="presets-list-area"></div>
         </div>
 
@@ -180,10 +179,6 @@
                 <div id="res-count" style="font-size:1rem; font-weight:bold; color:#2ecc71; visibility:hidden;">現在 0/0体</div>
                 
                 <div id="res-elem" style="font-size:0.8rem; color:var(--accent-color); border:1px solid var(--accent-color); padding:2px 10px; border-radius:20px; visibility:hidden;">-</div>
-                
-                <div class="last-res-area" id="last-res-box" style="visibility:hidden;">
-                    前回：<span id="last-name">なし</span> <span id="last-elem" style="font-size:0.75rem;">(-)</span>
-                </div>
             </div>
             
             <div class="stats-info">
@@ -191,7 +186,7 @@
                 有効: <span id="active-count" class="stats-highlight">0</span> / <span id="total-monsters">0</span>
             </div>
             
-            <button class="kill-btn" id="kill-action-btn" onclick="addKillCount()" disabled>⚔️ 討伐完了 (+1)</button>
+            <button class="kill-btn" id="kill-action-btn" onclick="addKillCount()" disabled>討伐完了 (+1)</button>
             <button class="main-btn" onclick="draw()">ルーレットを回す</button>
         </div>
         
@@ -218,11 +213,20 @@ const defaultData = [
     {ex:"1", name:"オサイズチ", elems:["雷"], enabled:true}, {ex:"1", name:"ドスバギィ", elems:["火"], enabled:true}, {ex:"1", name:"クルルヤック", elems:["水"], enabled:true}, {ex:"1", name:"ドスフロギィ", elems:["氷"], enabled:true}, {ex:"1", name:"アオアシラ", elems:["火"], enabled:true}, {ex:"1", name:"ウルクスス", elems:["火"], enabled:true}, {ex:"1", name:"ラングロトラ", elems:["水"], enabled:true}, {ex:"2", name:"アケノシルム", elems:["水"], enabled:true}, {ex:"2", name:"ロアルドロス", elems:["火"], enabled:true}, {ex:"2", name:"ボルボロス", elems:["火"], enabled:true}, {ex:"2", name:"ダイミョウザザミ", elems:["雷"], enabled:true}, {ex:"2", name:"フルフル", elems:["火"], enabled:true}, {ex:"2", name:"ヨツミワドウ", elems:["雷"], enabled:true}, {ex:"2", name:"ビシュテンゴ", elems:["氷"], enabled:true}, {ex:"3", name:"ビシュテンゴ亜種", elems:["水"], enabled:true}, {ex:"3", name:"プケプケ", elems:["雷"], enabled:true}, {ex:"3", name:"ジュラトドス", elems:["爆破"], enabled:true}, {ex:"2", name:"バサルモス", elems:["龍"], enabled:true}, {ex:"3", name:"イソネミクニ", elems:["雷"], enabled:true}, {ex:"4", name:"イソネミクニ亜種", elems:["火"], enabled:true}, {ex:"3", name:"リオレイア", elems:["龍"], enabled:true}, {ex:"7", name:"リオレイア希少種", elems:["雷"], enabled:true}, {ex:"4", name:"ベリオロス", elems:["火"], enabled:true}, {ex:"3", name:"トビカガチ", elems:["水"], enabled:true}, {ex:"4", name:"マガイマガド", elems:["水"], enabled:true}, {ex:"7", name:"マガイマガド(怨嗟)", elems:["水"], enabled:true}, {ex:"3", name:"アンジャナフ", elems:["水"], enabled:true}, {ex:"4", name:"ナルガクルガ", elems:["雷"], enabled:true}, {ex:"5", name:"タマミツネ", elems:["雷"], enabled:true}, {ex:"4", name:"ゴシャハギ", elems:["火"], enabled:true}, {ex:"4", name:"ガランゴルム", elems:["雷"], enabled:true}, {ex:"3", name:"ショウグンギザミ", elems:["雷"], enabled:true}, {ex:"5", name:"リオレウス", elems:["龍"], enabled:true}, {ex:"7", name:"リオレウス希少種", elems:["水"], enabled:true}, {ex:"4", name:"オロミドロ", elems:["火"], enabled:true}, {ex:"5", name:"オロミドロ亜種", elems:["水"], enabled:true}, {ex:"5", name:"ジンオウガ", elems:["氷"], enabled:true}, {ex:"5", name:"ルナガロン", elems:["火"], enabled:true}, {ex:"5", name:"ライゼクス", elems:["爆破"], enabled:true}, {ex:"6", name:"エスピナス", elems:["氷"], enabled:true}, {ex:"7", name:"エスピナス亜種", elems:["水"], enabled:true}, {ex:"6", name:"ゴア・マガラ", elems:["火"], enabled:true}, {ex:"8", name:"ゴア・マガラ(混沌)", elems:["龍"], enabled:true}, {ex:"5", name:"セルレギオス", elems:["雷"], enabled:true}, {ex:"5", name:"ティガレックス", elems:["雷"], enabled:true}, {ex:"5", name:"ディアブロス", elems:["氷"], enabled:true}, {ex:"4", name:"ヤツカダキ", elems:["氷"], enabled:true}, {ex:"6", name:"ヤツカダキ亜種", elems:["水"], enabled:true}, {ex:"8", name:"クシャルダオラ", elems:["雷"], enabled:true}, {ex:"8", name:"オオナズチ", elems:["火"], enabled:true}, {ex:"8", name:"テオ・テスカトル", elems:["水"], enabled:true}, {ex:"9", name:"シャガルマガラ", elems:["龍"], enabled:true}, {ex:"6", name:"ラージャン", elems:["氷"], enabled:true}, {ex:"7", name:"ラージャン(激昂)", elems:["氷"], enabled:true}, {ex:"6", name:"バゼルギウス", elems:["雷"], enabled:true}, {ex:"7", name:"バゼルギウス(紅蓮)", elems:["氷"], enabled:true}, {ex:"9", name:"バルファルク", elems:["爆破"], enabled:true}
 ];
 
+// プリセット初期値を3枠に調整
+let rawPresets = JSON.parse(localStorage.getItem('MHR_V17_PRESETS'));
+let initialPresets = [null, null, null];
+if (Array.isArray(rawPresets)) {
+    for (let i = 0; i < 3; i++) {
+        if (rawPresets[i] !== undefined) initialPresets[i] = rawPresets[i];
+    }
+}
+
 let state = {
     monsters: JSON.parse(localStorage.getItem('MHR_V15_DATA')) || defaultData,
     stats: JSON.parse(localStorage.getItem('MHR_V15_STATS')) || {},
     targets: JSON.parse(localStorage.getItem('MHR_V18_TARGETS')) || {},
-    presets: JSON.parse(localStorage.getItem('MHR_V17_PRESETS')) || [null, null, null, null, null],
+    presets: initialPresets,
     curIdx: null,
     lastIdx: null, 
     searchLevel: null,
@@ -258,7 +262,7 @@ function exportData() {
         stats: state.stats,
         targets: state.targets,
         presets: state.presets,
-        version: "1.18.2"
+        version: "1.18.3"
     };
     const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(backupObj, null, 2));
     const a = document.createElement('a');
@@ -283,7 +287,15 @@ function importData(event) {
                 state.monsters = data.monsters || defaultData;
                 state.stats = data.stats || {};
                 state.targets = data.targets || {};
-                state.presets = data.presets || [null, null, null, null, null];
+                
+                let importedPresets = [null, null, null];
+                if (Array.isArray(data.presets)) {
+                    for (let i = 0; i < 3; i++) {
+                        if (data.presets[i] !== undefined) importedPresets[i] = data.presets[i];
+                    }
+                }
+                state.presets = importedPresets;
+                
                 state.curIdx = null;
                 state.lastIdx = null;
 
@@ -765,7 +777,7 @@ function refresh() {
         countElem.innerText = countText;
         countElem.style.visibility = "visible";
 
-        killBtn.innerText = `⚔️ ${cur.name} を討伐完了 (+1)`;
+        killBtn.innerText = `${cur.name} を討伐完了 (+1)`;
         killBtn.disabled = false;
     } else {
         document.getElementById('res-name').innerText = "ターゲット";
@@ -773,17 +785,8 @@ function refresh() {
         document.getElementById('res-elem').style.visibility = "hidden";
         document.getElementById('res-count').style.visibility = "hidden";
         
-        killBtn.innerText = "⚔️ 討伐完了 (+1)";
+        killBtn.innerText = "討伐完了 (+1)";
         killBtn.disabled = true;
-    }
-
-    const last = state.monsters[state.lastIdx];
-    if(last && state.curIdx !== state.lastIdx) { 
-        document.getElementById('last-res-box').style.visibility = "visible";
-        document.getElementById('last-name').innerText = last.name;
-        document.getElementById('last-elem').innerText = `(${formatElements(last.elems)})`;
-    } else {
-        document.getElementById('last-res-box').style.visibility = "hidden";
     }
 
     const total = Object.values(state.stats).reduce((a, b) => a + b, 0);
@@ -806,7 +809,7 @@ function refresh() {
             
             li.innerHTML = `
                 <div style="display:flex; justify-content:space-between; align-items:center;">
-                    <span>${m.name} <small style="color:#666;">[EX${m.ex}]</small> ${isCurrent ? '<small style="color:var(--accent-color); font-weight:bold;">◀ 当選中</small>' : ''}</span>
+                    <span>${m.name} ${isCurrent ? '<small style="color:var(--accent-color); font-weight:bold;">◀ 当選中</small>' : ''}</span>
                     <span><b>${count}</b>${targetText}</span>
                 </div>
                 ${target > 0 ? `<div class="progress-bar-bg"><div class="progress-bar-fill" style="width:${percent}%;"></div></div>` : ''}
